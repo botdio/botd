@@ -1,7 +1,7 @@
 {
   "name": "botd",
   "version": "1.0.0",
-  "description": "bot development framework",
+  "description": "run code in the slack",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon ./index.js -t <slack bot token>",
@@ -17,10 +17,9 @@
     "javascript",
     "es6"
   ],
-  "author": "",
+  "author": "Huan Huang <hhhust@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "botkit": "^0.4.9",
     "co": "^4.6.0",
     "commander": "^2.9.0",
     "esprima": "^3.1.3",
