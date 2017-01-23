@@ -1,6 +1,6 @@
 {
   "name": "botd",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "run code in the slack",
   "main": "index.js",
   "scripts": {
