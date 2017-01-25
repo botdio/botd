@@ -32,6 +32,7 @@
     "mongoose-timestamp": "^0.6.0",
     "redis": "^2.6.5",
     "shortid": "^2.2.6",
+    "slack_builder": "^1.0.0",
     "slackbots": "^1.0.2",
     "superagent": "^3.3.2",
     "winston": "^2.3.0",

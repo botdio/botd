@@ -1,6 +1,6 @@
 'use strict';
 
-var SlackBuilder = require('../slack/builder');
+var SlackBuilder = require('slack_builder');
 var _ = require('lodash');
 var logger = require('../logger');
 var co = require('co');

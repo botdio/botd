@@ -6,7 +6,8 @@ var CONST = require('../constants');
 function runUnsafeScript(script, params, callback) {
   var context = {db: params.db || {}, libs: params.libs || [], network: params.network || CONST.MAX_REQUEST_ONCE};
   var timeout = params.timeout || 5 * 1000;
-  var worker = cp.fork('./shell/worker.js', [script, JSON.stringify(context)]);
+  var workerJs = `${__dirname}/worker.js`;
+  var worker = cp.fork(workerJs, [script, JSON.stringify(context)]);
   worker.on('message', function(data) {
     console.log(`run_script: recv child process message ${JSON.stringify(data)}`);
     var c = params.console || console;

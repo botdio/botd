@@ -14,7 +14,7 @@ var Metrics = require('./metrics');
 var RunCode = require('./run_script');
 var Stack = require('./stack');
 var logger = require('..//logger');
-var SlackBuilder = require('../slack/builder');
+var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
 
 const SHELL_TYPE = {

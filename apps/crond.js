@@ -6,7 +6,7 @@ var logger = require('../logger');
 var P = require('../utils/patterns');
 var later = require('later');
 var shortid = require('shortid');
-var SlackBuilder = require('../slack/builder');
+var SlackBuilder = require('slack_builder');
 
 const CRON_CMD_TYPE = {
     LIST: "list",

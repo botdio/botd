@@ -3,7 +3,7 @@ var _ = require('lodash');
 var request = require('superagent');
 const EventEmitter = require('events');
 var logger = require('../logger');
-var SlackBuilder = require('../slack/builder');
+var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
 var Apps = require('./index');
 

@@ -4,8 +4,8 @@ var request = require('superagent');
 const EventEmitter = require('events');
 var logger = require('../logger');
 var P = require('../utils/patterns');
-var SlackBuilder = require('../slack/builder');
-
+var SlackBuilder = require('slack_builder');
+var co = require('co');
 
 //manage the apps
 class App extends EventEmitter{
@@ -15,6 +15,7 @@ class App extends EventEmitter{
         this.db = ctx.db;
         this.save = ctx.save;
         this.push = ctx.push;
+        this.connector = ctx.connector;
         
         this.on('slack', this.onSlack);
     }
@@ -45,7 +46,7 @@ class App extends EventEmitter{
         logger.info(`app: install app ${name}`);
         var appClz = _.find(Apps, e => e.name.toLowerCase() === name.toLowerCase());
         if(!appClz){
-            this.push(`*${fail}*: not find app - ${name}`);
+            this.push(`_*fail*: not find app - ${name}_`);
             return ;
         }
         //check if already installed
@@ -56,8 +57,8 @@ class App extends EventEmitter{
         this.db.apps = ( this.db.apps || [] ).concat(appClz.name);
         this.db[appClz.name] = {}; // give db
         this.save();
+        co(this.connector.installApp(this.cid, appClz)).catch(err => logger.error(`app: fail to install ${appClz.name} in ${this.cid}`, err));
         this.list();
-        HnTrack.install(this.cid, appClz.name);
     }
 
     uninstall(name) {

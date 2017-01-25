@@ -53,6 +53,12 @@ class Connector extends EventEmitter {
                 logger.error(`connector: fail to locate common app ${app.app}`);
                 return ;
             }
+            var already = _.find(this.apps, a => a.cid === app.cid && a.constructor.name === app.app);
+            if(already){
+                already.db = app.db;
+                logger.info(`connector: already load app ${app.app} in channel ${app.cid}, update db`);
+                return ;
+            }
             this.apps.push(new AClz({
             cid: app.cid,
             db: app.db, //no db
@@ -65,6 +71,7 @@ class Connector extends EventEmitter {
         return yield ChannelDb.createChannel(cid, tid);
     }
     *joinChannel(cid, tid) {
+        if(!cid) return ;
         var channel = yield this.initChananelDb(cid, tid);
         this.channels.push(channel);
         logger.info(`connector: init channel ${cid} db done`);
@@ -84,8 +91,9 @@ class Connector extends EventEmitter {
             db: db, //no db
             push: this.push.bind(this, cid),
             save: this.saveChannelDb.bind(this, cid, db),
-            apps: this.apps}));
-            logger.info(`connector: install root app ${rootApp.name} done`);
+            apps: this.apps,
+            connector: this}));
+            logger.info(`connector: install root app ${rootApp.name} in channel ${cid} done`);
         })
     }
 
@@ -97,18 +105,23 @@ class Connector extends EventEmitter {
     }
 
     *installApp(cid, A) {
+        if(typeof A === "string") A = _.find(Apps.common, clz => clz.name === A);
         var app = yield AppDb.create(cid, A.name, this.tid);
         this.apps.push(new A({
             cid: cid,
             db: app.db, //no db
             push: this.push.bind(this, cid),
             save: this.saveAppDb.bind(this, cid, A.name, app.db)}));
-        logger.info(`connector: install app ${A.name} done`)        
+        logger.info(`connector: install app ${A.name} in channel ${cid} done`)        
     }
 
     // root app save in channel db
     saveChannelDb(cid, db) {
-        co(ChannelDb.updateDb(cid, db)).catch(err => logger.error(`connector: fail to update channel db`, err));
+        co(ChannelDb.updateDb(cid, db))
+        .then(() => {
+            this.loadChannelAndApps(this.tid);
+        })
+        .catch(err => logger.error(`connector: fail to update channel db`, err));
     }
 
     //common app saved
@@ -143,7 +156,7 @@ class Connector extends EventEmitter {
     }
     exec(cid, text){
         var apps = this.filterApps(cid);
-        logger.debug(`connector: slack apps filter by cid ${cid}, count ${_.map(apps, a => a.constructor.name).join(',')}`);
+        logger.debug(`connector: slack apps filter by cid ${cid}, apps ${_.map(apps, a => a.constructor.name).join(',')}`);
         _.each(apps, app => {
             try{
                 if(app.match(cid, text)){
