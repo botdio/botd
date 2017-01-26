@@ -7,7 +7,7 @@ play es6 code in slack
 
 ## How to Start BotD
 `
-node ./index.js -t  <slack bot token> -n <bot name, optional>
+node ./botd.js -t  <slack bot token> -n <bot name, optional>
 `
 
 ### Configuration
@@ -28,3 +28,8 @@ export LOG_FILE=mylog.log #default as botd.log, hosted in /logs/botd/${LOG_FILE}
 
 node ./index.js -t  <slack bot token>
 ```
+
+
+todo: shell config?
+
+todo: how to extension?

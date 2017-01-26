@@ -21,7 +21,7 @@ const SHELL_TYPE = {
     RUN: "RUN"
 }
 
-const SHELL_RESOLVE_KEYWORDS = ["shell", "!"];
+const SHELL_RESOLVE_KEYWORDS = ["shell", "!", "script"];
 
 class Shell extends EventEmitter{
     constructor(ctx) {
@@ -77,7 +77,7 @@ class Shell extends EventEmitter{
             try{
                 this.execRunProcess(stack, sandbox, options, metrics);
             }catch(err) {
-                sandbox.global.console.error(err);
+                sandbox.console.error(err);
                 logger.error(`shell: fail to execute code ${code}`, err);
             }
             break;
@@ -114,10 +114,15 @@ class Shell extends EventEmitter{
         esprima.parse(code);
     }
     options() {
+        var config = (Shell.CONFIG || require(process.env.SHELL_CONFIG || "./shell.config")) || {};
+        const MUST = {co: "co", _: "lodash"};
+        var libs = Object.assign({}, config.libs || {}, MUST);
+
         return {
             filename: "script.js",
             displayErrors: true,
-            timeout:  CONST.DEFAULT_VM_TIMEOUT
+            timeout: config.timeout || CONST.DEFAULT_VM_TIMEOUT,
+            libs: libs
         }
     }
     buildMetrics(stack) {
@@ -143,9 +148,16 @@ class Shell extends EventEmitter{
             console.error(err);
         })
         `
+        try{
+            logger.debug(`shell: start to check code ${metrics.counter.md5} by ast`);
+            this.checkCode(code);
+        }catch(err) {
+            // metrics.counter.stopAt("ast");
+            throw err;
+        }
         RunCode(code,{
                 db: sandbox.db, 
-                libs: {_: "lodash", co: "co"}, 
+                libs: options.libs, 
                 timeout: options.timeout,
                 network: CONST.MAX_REQUEST_ONCE,
                 console: sandbox.console
@@ -202,6 +214,11 @@ class Shell extends EventEmitter{
         }
         return sandbox.result;
     }
+}
+
+Shell.addLibs = function(name, file) {
+    Shell.CONFIG = Shell.CONFIG || {libs: {}};
+    Shell.CONFIG.libs[name] = file;
 }
 
 Shell.parse = function(text) {

@@ -1,0 +1,7 @@
+{
+    "libs": {
+        "co": "co",
+        "_" : "lodash"
+    },
+    "timeout": 5000
+}

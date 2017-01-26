@@ -66,6 +66,8 @@ class Connector extends EventEmitter {
             save: this.saveAppDb.bind(this, app.cid, AClz.name, app.db)}));
             logger.info(`connector: load the app ${app.app} for team ${tid} db`, app.db); 
         });
+
+        this.notifyAppEvent("app_loaded");
     }
     *initChananelDb(cid, tid) {
         return yield ChannelDb.createChannel(cid, tid);
@@ -127,8 +129,18 @@ class Connector extends EventEmitter {
         removed.emit('destroy');
         yield AppDb.deleteDb(cid, A.name);
         this.apps = _.filter(this.apps, a => a !== removed);
+        this.notifyAppEvent("app_removed", {cid: cid, appName: A.name});
         //clean db
         logger.info(`connector: uninstall app ${A.name} in channel ${cid} done`);   
+    }
+    notifyAppEvent(event, data) {
+        _.each(this.apps, app => {
+            try{
+                app.emit(event, data || {});
+            }catch(err) {
+                logger.error(`connector: fail to emit app_load into app ${app.constructor.name}`, err);
+            }
+        });       
     }
 
     // root app save in channel db

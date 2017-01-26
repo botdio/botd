@@ -2,6 +2,22 @@ var cp = require('child_process');
 var _ = require('lodash');
 var CONST = require('../constants');
 
+function toError(data) {
+    var result = data;
+    if (data && data.__error__) {
+        result = new Error();
+        result.message = data.message;
+        result.stack = data.stack;
+        result.name = data.name;
+        Object.keys(data).forEach(function(key) {
+            if (!result[key]) {
+                result[key] = data[key];
+            }
+        });
+    }
+    return data;
+}
+
 //params: {db, libs, timeout, console}
 function runUnsafeScript(script, params, callback) {
   var context = {db: params.db || {}, libs: params.libs || [], network: params.network || CONST.MAX_REQUEST_ONCE};
@@ -18,7 +34,7 @@ function runUnsafeScript(script, params, callback) {
       case "error":
         c.error.apply(c, _.map(data.arguments, str => {
           var json = JSON.parse(str);
-          if(json.name === "Error") return new Error(json.message, json.stack);
+          if(json.__error__) return toError(json);
           else return json;
         }));
         return ;

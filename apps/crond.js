@@ -40,17 +40,20 @@ class Cron extends EventEmitter{
     onRemoveApp(event) {
         var cid = event.cid;
         var appName = event.appName;
+        var oldCount = this.tasks.length;
         this.tasks = _.filter(this.tasks, t => !(t.cid === cid && t.app.constructor.name === appName));
+        logger.debug(`crond: remove app event`, oldCount, this.tasks.length);
     }
     updateJobs() {
         try{
-            logger.debug(`crond: cronjobs is ${JSON.stringify(this.db.cronjobs)}`);
-            _.each(this.db.cronjobs || [] ,job=>{
+            logger.debug(`crond: cronjobs`, this.db.cronjobs);
+            _.each(this.db.cronjobs || [], job=>{
                 // app is load?
                 var cid = job.cid;
                 var time = job.time;
                 var cmd = job.cmd;
                 var matchedApps = _.filter(this.apps, app => app.cid === cid && app.match(cid, cmd));
+                logger.debug(`crond: find matched apps`, cmd, matchedApps.length);
                 _.each(matchedApps, app => {
                     if(_.find(this.tasks, t => t.app === app)) return ; //alreay loaded
                     var s = later.parse.cron(time);
@@ -112,6 +115,7 @@ class Cron extends EventEmitter{
     onSlack(event) {
         var cid = event.cid;
         var opt = this.parse(event.text);
+        logger.debug(`crond: parse text into opt`, event.text, opt);
         if(!opt) return ;
 
         switch(opt.type) {
@@ -149,7 +153,7 @@ class Cron extends EventEmitter{
                 var already;
                 //check if cmd is already setup
                 if(already = _.find(this.tasks, j => j.cmd === cmd && j.time === time)){
-                    this.push(new SlackBuilder("Fail: already setup same cron job:").br()
+                    this.push(new SlackBuilder("Fail: already setup same cron job:").i().br()
                                 .text(this.buildTaskSlack(already))
                                 .build());
                     break;
@@ -176,12 +180,12 @@ class Cron extends EventEmitter{
                         this.push(new SlackBuilder("OK!")
                             .text(" Command").code(cmd)
                             .text("install done, next run time")
-                            .code(next[0])
+                            .code(next[0]).i()
                             .build());
                         logger.debug(`crond: setup cron job ${id} in app ${app.constructor.name} for time ${time} cmd ${cmd}`);
                     });
                 }else{
-                    this.push(new SlackBuilder(`Fail: not support command `).code(cmd).br().text("make sure you can run it in slack").build());
+                    this.push(new SlackBuilder(`Fail: not support command `).code(cmd).i().br().i("make sure you can run it in slack").build());
                 }
                 break ;
         }
@@ -194,9 +198,11 @@ class Cron extends EventEmitter{
     listAll(cid) {
         var tasks = _.filter(this.tasks, t => t.cid === cid);
         if(tasks.length === 0){
-            this.push(new SlackBuilder("Not yet create any cron jobs, run ").br().code("help cron").text("to find how to create").build());
+            this.push(new SlackBuilder("Not yet create any cron jobs, run ").i().br()
+                        .text(new SlackBuilder().code("help cron").text("to find how to create").i().build())
+                        .build());
         }else{
-            this.push(new SlackBuilder("Running cron jobs:").br()
+            this.push(new SlackBuilder("Running cron jobs:").i().br()
                     .text(_.map(tasks, t => this.buildTaskSlack(t)).join("\n"))
                     .build());
         }
@@ -222,12 +228,13 @@ class Cron extends EventEmitter{
                     .code(task.id)
                     .text(', time')
                     .code(task.time)
+                    .text(' , delete by ').code(`cron delete ${task.id}`)
                     .text(', command')
-                    .code(task.cmd)
-                    .text(',');
+                    .code(task.cmd);
     if(task.code)
-        sb.text("code:").pre(task.code);
-    sb.text(' , cancel it by ').code(`cron delete ${task.id}`);
+        sb.text("code:").i().pre(task.code);
+    else
+        sb.i();
     return sb.build();
     }
 }
