@@ -105,14 +105,30 @@ class Connector extends EventEmitter {
     }
 
     *installApp(cid, A) {
-        if(typeof A === "string") A = _.find(Apps.common, clz => clz.name === A);
-        var app = yield AppDb.create(cid, A.name, this.tid);
+        var db = yield AppDb.fetchDb(cid, A.name, this.tid);
+        if(!db){
+            var app = yield AppDb.create(cid, A.name, this.tid);
+            db = app.db;
+        }
         this.apps.push(new A({
             cid: cid,
-            db: app.db, //no db
+            db: db, //no db
             push: this.push.bind(this, cid),
-            save: this.saveAppDb.bind(this, cid, A.name, app.db)}));
+            save: this.saveAppDb.bind(this, cid, A.name, db)}));
         logger.info(`connector: install app ${A.name} in channel ${cid} done`)        
+    }
+
+    *uninstallApp(cid, A) {
+        var removed = _.find(this.apps, a => a.constructor.name === A.name && a.cid === cid);
+        if(!removed) {
+            logger.warn(`connector: fail to find the uninstalling app for ${A.name} cid ${cid}`);
+            return ;
+        }
+        removed.emit('destroy');
+        yield AppDb.deleteDb(cid, A.name);
+        this.apps = _.filter(this.apps, a => a !== removed);
+        //clean db
+        logger.info(`connector: uninstall app ${A.name} in channel ${cid} done`);   
     }
 
     // root app save in channel db
@@ -170,53 +186,6 @@ class Connector extends EventEmitter {
 
     filterApps(cid) {
         return _.filter(this.apps, e => e.cid === cid);
-    }
-
-    loadCommonApps(ch) {//load the common apps
-        var apps = (ch || {}).apps || [];
-        _.each(apps, appName => {
-            var clz = _.find(Apps.common, e => e.name === appName);
-            if(!clz || !clz.name) return ;
-            var chDb = (_.find(this.channels, d => d.id === ch.id) ||{}).db || {};
-            co(AppModel.fetchDb(ch.id, appName, this.props.tid)).then(appDb => {
-                //check if app is loaded in this channel
-                var app = _.find(this.apps, a => a.cid === ch.id && a.constructor.name === appName);
-                if(app){
-                    logger.debug(`HN: app ${appName} is alredy loaded, reload db into ${JSON.stringify(appDb)}`);
-                    app.db = appDb;
-                    return; 
-                }
-                logger.debug(`HN: app ${appName} load db size ${JSON.stringify(appDb).length}B`);
-
-                this.apps.push(new clz({cid: ch.id, db: appDb,
-                    push: this.push.bind(this, ch.id),
-                    save: this.saveApp.bind(this, ch.id, appName, appDb)}));
-
-                //send the app_load event to the root apps
-                this.notifyAppEvent(ch.id, "app_loaded");
-            }).catch(err => {
-                logger.error(`hn: fetch app ${appName} cid ${ch.id} db fail`, err);
-            });
-        });
-        //check if app removed
-        var removedAppInsts = _.filter(this.apps, appInst => appInst.cid === ch.id 
-                        && !_.find(apps, appName => appName === appInst.constructor.name)
-                        && !_.find(Apps.root, r => r.name === appInst.constructor.name));
-        _.each(removedAppInsts, inst => {
-            _.remove(this.apps, inst);
-            logger.info(`HN: app ${inst.constructor.name} instance is removed from cid ${ch.id}, apps count ${this.apps.length}`);
-            this.notifyAppEvent(ch.id, "app_removed", {cid: ch.id, appName: inst.constructor.name});
-        });
-    }
-    notifyAppEvent(cid, event, data) {
-         var apps = this.filterApps(cid);
-        _.each(apps, app => {
-            try{
-                app.emit(event, data || {});
-            }catch(err) {
-                logger.error(`HN: fail to emit app_load into app ${app.constructor.name} cid ${cid}`, err);
-            }
-        });       
     }
 
     push(cid, text, attachmentsOrTs, attachments) {

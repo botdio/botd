@@ -68,3 +68,14 @@ exports.updateDb = function* (app, cid, db) {
         });
     })    
 }
+exports.deleteDb = function* (cid, app) {
+    return yield new Promise((r,j) => {
+        AppModel.findOneAndRemove({app: app, cid: cid},(err) => {
+            if(err) j(err);
+            else {
+                r({});
+                logger.info(`app_db: delete app ${app} cid ${cid} db done`);
+            }
+        });
+    })    
+}

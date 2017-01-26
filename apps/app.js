@@ -66,10 +66,12 @@ class App extends EventEmitter{
         logger.info(`app: uninstall app ${name}`);
         var appClz = _.find(Apps, e => e.name.toLowerCase() === name.toLowerCase());
         if(!appClz){
-            this.push(`*${WARN}*: not install app - ${name}`);
+            this.push(`*${WARN}*: not find app - ${name}`);
             return ;
         }
         this.db.apps = _.filter(this.db.apps, app => app !== appClz.name);
+        co(this.connector.uninstallApp(this.cid, appClz)).catch(err => logger.error(`app: fail to uninstall ${appClz.name} in ${this.cid}`, err));
+
         this.save();
         this.list();
     }
