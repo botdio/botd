@@ -1,11 +1,11 @@
 {
   "name": "botd",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "run code in the slack",
   "main": "index.js",
   "homepage": "https://github.com/botdio/botd",
   "scripts": {
-    "dev": "nodemon ./index.js -t <slack bot token>",
+    "dev": "nodemon ./botd.js -t <put your slack bot token here>",
     "test": "mocha"
   },
   "repository": {
