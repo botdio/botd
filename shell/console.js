@@ -8,8 +8,8 @@ var co = require('co');
 const MAX_TEXT_SIZE = 2048;
 
 class Console {
-    constructor(push) {
-        this.ts = undefined;
+    constructor(push, ts) {
+        this.ts = ts;
         this.sending = false;
         this.buffer = [];
         this.sentCount = 0; // already sent count

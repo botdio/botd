@@ -64,14 +64,18 @@ class Shell extends EventEmitter{
     onSlack(event) {
         var cid = event.cid;
         var text = event.text;
+        var ts = event.ts;
+        var outTs = (this.outs || {})[ts];
+        logger.debug(`shell: code ts ${ts} out ts ${outTs}`)
+
         if(!this.match(cid, text)) return ;
 
         var cmd = Shell.parse(text);
         switch(cmd.type) {
             case SHELL_TYPE.RUN:
-            var stack = new Stack(this.fmt(cmd.code),this.db);
+            var stack = new Stack(this.fmt(cmd.code),this.db, ts);
             var metrics = this.buildMetrics(stack);
-            var sandbox = this.buildSandbox(metrics);
+            var sandbox = this.buildSandbox(metrics, outTs);
             var options = this.options();
 
             try{
@@ -128,12 +132,12 @@ class Shell extends EventEmitter{
     buildMetrics(stack) {
         return new Metrics(stack);
     }
-    buildSandbox(metrics) {
+    buildSandbox(metrics, ts) {
         var sandbox = {
             db: this.db,
             _: _,
             co: co,
-            console: new Console(this.push.bind(this)),
+            console: new Console(this.push.bind(this), ts),
             SlackBuilder: SlackBuilder
         }
         sandbox.global = sandbox;
@@ -181,6 +185,14 @@ class Shell extends EventEmitter{
         else{
             logger.error(`shell: code ${stack.hash()} unable handle event data err ${JSON.stringify(err)} data ${JSON.stringify(data)}`)
         }
+        if(sandbox.console.ts){
+            this.attachTs(stack.ts(), sandbox.console.ts);
+        }
+    }
+    attachTs(ts, out) {
+        if(!ts) return ;
+        this.outs = this.outs || {};
+        this.outs[ts] = out;
     }
     isNormalExit(err, data) {
         if(typeof err === "number" && err === 0) return true;

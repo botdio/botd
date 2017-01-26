@@ -66,11 +66,17 @@ class SlackBot {
                 var channel = msg.channel;
                 // logger.info(`slack: channel ${channel} got message ${JSON.stringify(msg)}`);
                 if(msg.bot_id) return ; //a bot message, ignore
-                if(msg.subtype) return ; // special message, ignore
+                // if(msg.subtype) return ; // special message, ignore
                 if(msg.user && msg.user === "USLACKBOT") return ;
+                var ts = msg.ts;
+                var text = msg.text;
+                if(msg.subtype && msg.subtype === "message_changed") {
+                  ts = msg.message.ts;
+                  text = msg.message.text;
+                }
 
-                var processedMsg = this.preHandleMsg(channel, msg.text);
-                this.connector.emit("message", {cid: channel, text: processedMsg.text, type: processedMsg.type});
+                var processedMsg = this.preHandleMsg(channel, text);
+                this.connector.emit("message", {cid: channel, text: processedMsg.text, type: processedMsg.type, ts: ts});
                 break;
 
               default:

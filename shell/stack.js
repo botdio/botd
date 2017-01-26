@@ -2,10 +2,14 @@
 var md5 = require('js-md5');
 
 class Stack {
-    constructor(code, db) {
+    constructor(code, db, ts) {
         this._code = code;
+        this._ts = ts;
         this._hash = md5(code);
         this._old = JSON.stringify(db);
+    }
+    ts() {
+        return this._ts;
     }
     code() {
         return this._code;

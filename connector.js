@@ -177,18 +177,18 @@ class Connector extends EventEmitter {
         try{
             var cid = event.cid;
             var text = event.text;
-            this.exec(cid, text);            
+            this.exec(cid, text, event.ts);            
         }catch(err) {
             logger.error(`connector: fail to run slack command ${text}`, err);
         }
     }
-    exec(cid, text){
+    exec(cid, text, ts){
         var apps = this.filterApps(cid);
         logger.debug(`connector: slack apps filter by cid ${cid}, apps ${_.map(apps, a => a.constructor.name).join(',')}`);
         _.each(apps, app => {
             try{
                 if(app.match(cid, text)){
-                    app.emit('slack', {cid: cid, text: text});
+                    app.emit('slack', {cid: cid, text: text, ts: ts});
                 }
             }catch(err) {
                 logger.error(`connector: fail to emit slack command ${text} into app ${app.constructor.name} cid ${cid}`, err);
