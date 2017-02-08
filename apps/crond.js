@@ -256,19 +256,19 @@ Cron.parseCode = function(text) {
 Cron.help = function(verbose) {
     if(verbose) {
         return `_*Cron* : cron job managment, a time-based job scheduler _
-            _\`cron list\` - list cron jobs_
-            _\`cron add\` - add cron job_
-            _.e.g \`cron add "*/10 * * * ? *" "db.counter=db.counter+1||1; console.log(db.counter)" \` every 10 minutes, counter++ and print it_
-            _\`cron delete <job index>\` - add an cron job_
-            _\`cron set <key> <value>\` - set cron job settings_
+        _\`cron list\` - list cron jobs_
+        _\`cron add\` - add cron job_
+        _.e.g \`cron add "*/10 * * * ? *" "db.counter=db.counter+1||1; console.log(db.counter)" \` every 10 minutes, counter++ and print it_
+        _\`cron delete <job index>\` - add an cron job_
+        _\`cron set <key> <value>\` - set cron job settings_
             `;
     }else{
         return `_*Cron* : cron job managment, a time-based job scheduler_
-            _\`cron list\` - list cron jobs_
-            _\`cron add\` - add an cron job_
-            _\`cron delete <job id>\` - add an cron job_
-            _\`cron set <key> <value>\` - set cron job settings_
-            `;        
+        _\`cron list\` - list cron jobs_
+        _\`cron add\` - add an cron job_
+        _\`cron delete <job id>\` - add an cron job_
+        _\`cron set <key> <value>\` - set cron job settings_
+        `;        
     }
 }
 module.exports = Cron;

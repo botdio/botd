@@ -81,7 +81,7 @@ class App extends EventEmitter{
         var apps = this.db.apps || [];
         var sb = new SlackBuilder();
         if(apps.length > 0) {
-            sb.text(`Already installed : `);
+            sb.text(`Installed : `);
             _.each(apps, app => sb.b(`${app}`));
             sb.i();
         }else{

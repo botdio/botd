@@ -118,7 +118,7 @@ class Shell extends EventEmitter{
         esprima.parse(code);
     }
     options() {
-        var config = (Shell.CONFIG || require(process.env.SHELL_CONFIG || "./shell.config")) || {};
+        var config = (Shell.CONFIG || require(process.env.SHELL_CONFIG || "./shell.json")) || {};
         const MUST = {co: "co", _: "lodash"};
         var libs = Object.assign({}, config.libs || {}, MUST);
 
@@ -183,7 +183,7 @@ class Shell extends EventEmitter{
             metrics.setCurDb(data.db);
         }
         else{
-            logger.error(`shell: code ${stack.hash()} unable handle event data err ${JSON.stringify(err)} data ${JSON.stringify(data)}`)
+            // logger.debug(`shell: code ${stack.hash()} unable handle event data err ${JSON.stringify(err)} data ${JSON.stringify(data)}`)
         }
         if(sandbox.console.ts){
             this.attachTs(stack.ts(), sandbox.console.ts);
@@ -246,7 +246,7 @@ Shell.parse = function(text) {
 Shell.help = function(verbose) {
     var sb = new SlackBuilder();
     sb.b(`Shell`).text(` - write, edit and run code`).i().br();
-    sb.text("_`! `<code>` `").text(" - run <code> _");
+    sb.text("\t_`! `<code>` `").text(" - run <code> _").br();
     return sb.build();
 }
 

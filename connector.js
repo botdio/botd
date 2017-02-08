@@ -103,9 +103,11 @@ class Connector extends EventEmitter {
     }
 
     *installDefaultApps(cid) {
+        var appManagementApp = _.find(this.apps, a => a.cid === cid && a.constructor.name === "App");
         for(var i = 0; i < Apps.defaults.length; i ++) {
             var DefApp = Apps.defaults[i];
-            yield this.installApp(cid, DefApp);
+            appManagementApp.install(DefApp.name);
+            // yield this.installApp(cid, DefApp);
         }
     }
 
