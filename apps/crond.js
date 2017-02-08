@@ -46,7 +46,6 @@ class Cron extends EventEmitter{
     }
     updateJobs() {
         try{
-            logger.debug(`crond: cronjobs`, this.db.cronjobs);
             _.each(this.db.cronjobs || [], job=>{
                 // app is load?
                 var cid = job.cid;
@@ -256,19 +255,19 @@ Cron.parseCode = function(text) {
 
 Cron.help = function(verbose) {
     if(verbose) {
-        return `*Cron* : cron job managment, to build newsletter or poll works
-            \`cron list\` - list cron jobs
-            \`cron add\` - add cron job
-            .e.g \`cron add "*/10 * * * ? *" "follow" \` to print my follow list every 10 minutes
-            \`cron delete <job index>\` - add an cron job
-            \`cron set <key> <value>\` - set cron job settings
+        return `_*Cron* : cron job managment, a time-based job scheduler _
+            _\`cron list\` - list cron jobs_
+            _\`cron add\` - add cron job_
+            _.e.g \`cron add "*/10 * * * ? *" "db.counter=db.counter+1||1; console.log(db.counter)" \` every 10 minutes, counter++ and print it_
+            _\`cron delete <job index>\` - add an cron job_
+            _\`cron set <key> <value>\` - set cron job settings_
             `;
     }else{
-        return `*Cron* : cron job managment
-            \`cron list\` - list cron jobs
-            \`cron add\` - add an cron job
-            \`cron delete <job id>\` - add an cron job
-            \`cron set <key> <value>\` - set cron job settings
+        return `_*Cron* : cron job managment, a time-based job scheduler_
+            _\`cron list\` - list cron jobs_
+            _\`cron add\` - add an cron job_
+            _\`cron delete <job id>\` - add an cron job_
+            _\`cron set <key> <value>\` - set cron job settings_
             `;        
     }
 }

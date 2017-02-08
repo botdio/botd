@@ -43,7 +43,7 @@ class Help extends EventEmitter{
         if(!app){
             this.push(new SlackBuilder(`Not found app named`).b(appName).i().build());
         }else{
-            this.push(new SlackBuilder(app.help(true)).i().build());
+            this.push(new SlackBuilder(app.help(true)).build());
         }
     }
 
@@ -58,7 +58,6 @@ class Help extends EventEmitter{
             .map(app => {
                 var clz = _.find(allApps, a => a.name === app);
                 if(clz){
-                    logger.debug(`help: - try to get help from ${app}`);
                     return clz.help();
                 }
             }).filter(h => h).value()
@@ -67,8 +66,8 @@ class Help extends EventEmitter{
     }
 }
 Help.help = function() {
-    return `*Help* : print usage
-    \`help\` - print all installed apps help manual
-    \`help <app>\` - print <app> help manual verbosely` ;
+    return `_*Help* : print usage_
+    _\`help\` - print all installed apps help manual_
+    _\`help <app>\` - print <app> help manual verbosely_` ;
 }
 module.exports = Help;

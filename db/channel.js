@@ -55,3 +55,14 @@ exports.updateDb = function* (cid, db) {
         });
     })    
 }
+exports.deleteDb = function* (cid) {
+    return yield new Promise((r,j) => {
+        ChannelModel.findOneAndRemove({id: cid}, (err, saved) => {
+            if(err) j(err);
+            else {
+                r({});
+                logger.info(`channel db: delete cid ${cid} db done`);
+            }
+        });
+    })    
+}

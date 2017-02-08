@@ -58,8 +58,14 @@ class SlackBot {
 
               case "group_joined":
               case "channel_joined":
-                logger.debug(`slack: group join msg`, msg);
-                this.connector.emit("joined", msg);
+                logger.debug(`slack: group/channel join msg`, msg);
+                this.connector.emit("join", msg);
+                break;
+
+              case "group_left":
+              case "channel_left":
+                logger.debug(`slack: group/channel left msg`, msg);
+                this.connector.emit("left", msg);
                 break;
 
               case "message":

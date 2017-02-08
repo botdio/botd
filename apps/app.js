@@ -85,7 +85,7 @@ class App extends EventEmitter{
             _.each(apps, app => sb.b(`${app}`));
             sb.i();
         }else{
-            sb.text(`Not install any apps.`).i();            
+            sb.text(`Not install any common apps.`).i();            
         }
         var lefts = _.filter(Apps.common, a => !_.find(apps, name => a.name === name));
         if(lefts.length > 0) {
@@ -124,9 +124,10 @@ App.parseCmd = function(text) {
     return cmd;
 }
 App.help = function() {
-    return `*App* : install or remove apps
-        \`app install\` or \`app i\` - install an app
-        \`app uninstall \` - remove an app
+    return `_*App* : install or remove apps_
+        _\`app\` - list installed apps for this channel_
+        _\`app install\` or \`app i\` - install an app_
+        _\`app uninstall \` - remove an app_
         `;
 }
 module.exports = App;

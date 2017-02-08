@@ -10,6 +10,7 @@ var CONST = require('./constants');
 var AppDb = require('./db/app')
 var ChannelDb = require('./db/channel')
 var App = require('./apps')
+var SlackBuilder = require('slack_builder');
 
 // connect the bot with slack
 class Connector extends EventEmitter {
@@ -24,6 +25,8 @@ class Connector extends EventEmitter {
         this.on('start', this.onStart);
         this.on('error', this.onError);
         this.on('join', this.onJoin);
+        this.on('left', this.onLeft);
+        
         this.on('message', this.onMsg);
     }
     onStart(event) {
@@ -64,7 +67,7 @@ class Connector extends EventEmitter {
             db: app.db, //no db
             push: this.push.bind(this, app.cid),
             save: this.saveAppDb.bind(this, app.cid, AClz.name, app.db)}));
-            logger.info(`connector: load the app ${app.app} for team ${tid} db`, app.db); 
+            logger.info(`connector: load the app ${app.app} for team ${tid} channel ${app.cid} db`); 
         });
 
         this.notifyAppEvent("app_loaded");
@@ -164,13 +167,27 @@ class Connector extends EventEmitter {
         logger.info(`connector: recv event`, event);
     }
     onJoin(event) {
-        logger.info(`connector: recv join event`, event);
-        var cid = event.cid;
+        logger.info(`connector: recv join event`, JSON.stringify(event));
+        var cid = event.channel.id;
+        co(this.joinChannel(cid, this.tid)).then(() => {
+            logger.info(`connector: channel ${cid} join done`);
+            this.push(cid, new SlackBuilder(`OK, channel join done, press \`help\` to start!`).i().build());            
+        }).catch(err => {
+            logger.info(`connector: channel ${cid} join fail`, err);
+            this.push(cid, new SlackBuilder(`ERROR: fail to init channel`).i().br().text(err.toString()).build());            
+        });
+    }
+    onLeft(event) {
+        logger.info(`connector: recv left event`, JSON.stringify(event));
+        var cid = event.channel;
         var apps = _.filter(this.apps, a => a.cid === cid);
-        if(apps.length === 0) {
-            //install the default apps
-            this.installRootApps(cid);
-        }
+        _.each(apps, a => {
+            co(AppDb.deleteDb(cid, a.constructor.name))
+            .catch(err => logger.error(`connector: fail to delete channel ${cid} app ${a.constructor.name}`, err));
+        });
+        this.apps = _.filter(this.apps, a => a.cid !== cid);
+        co(ChannelDb.deleteDb(cid)).catch(err => logger.error(`connector: fail to delete channel ${cid} db`, err))
+        this.channels = _.filter(this.channels, c => c.cid !== cid);
     }
     onMsg(event) {
         logger.info(`connector: recv message event`, event);

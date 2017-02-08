@@ -245,8 +245,8 @@ Shell.parse = function(text) {
 
 Shell.help = function(verbose) {
     var sb = new SlackBuilder();
-    sb.b(`Shell`).text(` - run code to build how to read HN`).br();
-    sb.text("`! `<code>` `").text(" - run <code>, e.g. ");
+    sb.b(`Shell`).text(` - write, edit and run code`).i().br();
+    sb.text("_`! `<code>` `").text(" - run <code> _");
     return sb.build();
 }
 
