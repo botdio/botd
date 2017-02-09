@@ -3,17 +3,15 @@ var _ = require('lodash');
 var request = require('superagent');
 var EventEmitter = require('events');
 var esprima = require('esprima');
-var moment = require('moment');
 var co = require('co');
 var vm = require('vm');
-var shortid = require('shortid');
 
 var Console = require('./console');
 var CONST = require('../constants');
 var Metrics = require('./metrics');
 var RunCode = require('./run_script');
 var Stack = require('./stack');
-var logger = require('..//logger');
+var logger = require('../logger');
 var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
 
@@ -81,7 +79,11 @@ class Shell extends EventEmitter{
             try{
                 this.execRunProcess(stack, sandbox, options, metrics);
             }catch(err) {
-                sandbox.console.error(err);
+                sandbox.console.error(err).then(() => {
+                    if(sandbox.console.ts){
+                        this.attachTs(stack.ts(), sandbox.console.ts);
+                    } 
+                });
                 logger.error(`shell: fail to execute code ${code}`, err);
             }
             break;
@@ -245,7 +247,7 @@ Shell.parse = function(text) {
 
 Shell.help = function(verbose) {
     var sb = new SlackBuilder();
-    sb.b(`Shell`).text(` - write, edit and run code`).i().br();
+    sb.b(`Shell`).text(` - write, edit and run nodejs script`).i().br();
     sb.text("\t_`! `<code>` `").text(" - run <code> _").br();
     return sb.build();
 }

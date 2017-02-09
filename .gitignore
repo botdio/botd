@@ -3,3 +3,5 @@ node_modules
 dev.sh
 *.log
 index.html
+channels.json
+apps.json

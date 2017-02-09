@@ -7,10 +7,12 @@ var co = require('co');
 var logger = require('./logger');
 var Apps = require('./apps');
 var CONST = require('./constants');
-var AppDb = require('./db/app')
-var ChannelDb = require('./db/channel')
-var App = require('./apps')
+var App = require('./apps');
 var SlackBuilder = require('slack_builder');
+
+const DB = (process.env.DB || CONST.DEFAULT_DB );
+var AppDb = DB.indexOf("mongodb:") === 0 ? require('./db/app') : require('./file/app');
+var ChannelDb = DB.indexOf("mongodb:") === 0 ? require('./db/channel') : require('./file/channel');
 
 // connect the bot with slack
 class Connector extends EventEmitter {

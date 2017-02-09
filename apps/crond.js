@@ -208,13 +208,14 @@ class Cron extends EventEmitter{
     }
     deleteJob(cid, jobid) {
         var task = _.find(this.tasks, t => t.id === jobid);
-        if(!task) this.push(new SlackBuilder(`Fail: invalid job id`).b(jobid)
-                            .br().text("run ").code('cron')
-                            .text("to find running jobs").build());
+        if(!task) this.push(new SlackBuilder(`Fail: invalid job id`).b(jobid).i()
+                            .br()
+                            .text(new SlackBuilder("run ").code('cron list').text("to find running jobs").i().build())
+                            .build());
         else{
             task.timer.clear();
             this.tasks = _.filter(this.tasks, t => t.id !== jobid);
-            this.push(new SlackBuilder(`Good, job`).b(jobid).text("delete done.").build());
+            this.push(new SlackBuilder(`Good, job`).b(jobid).text("delete done.").i().build());
             this.db.cronjobs = _.filter(this.db.cronjobs || [], j => j.id !== jobid);
             this.save();
             logger.info(`crond: job ${jobid} is stopped and removed done`);
