@@ -63,7 +63,7 @@ class Shell extends EventEmitter{
         var cid = event.cid;
         var text = event.text;
         var ts = event.ts;
-        var outTs = (this.outs || {})[ts];
+        var outTs = (this.db.outs || {})[ts];
         logger.debug(`shell: code ts ${ts} out ts ${outTs}`)
 
         if(!this.match(cid, text)) return ;
@@ -193,8 +193,9 @@ class Shell extends EventEmitter{
     }
     attachTs(ts, out) {
         if(!ts) return ;
-        this.outs = this.outs || {};
-        this.outs[ts] = out;
+        this.db.outs = this.db.outs || {};
+        this.db.outs[ts] = out;
+        this.save();
     }
     isNormalExit(err, data) {
         if(typeof err === "number" && err === 0) return true;

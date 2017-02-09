@@ -5,9 +5,8 @@ var EventEmitter = require('events');
 var request = require('superagent');
 var co = require('co');
 var logger = require('./logger');
-var Apps = require('./apps');
+var Apps = require('./apps/index');
 var CONST = require('./constants');
-var App = require('./apps');
 var SlackBuilder = require('slack_builder');
 
 const DB = (process.env.DB || CONST.DEFAULT_DB );
@@ -92,7 +91,7 @@ class Connector extends EventEmitter {
     }
 
     installRootApps(cid, db) {
-        _.each(App.root, rootApp => {
+        _.each(Apps.root, rootApp => {
             this.apps.push(new rootApp({
             cid: cid,
             db: db, //no db
