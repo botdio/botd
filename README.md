@@ -6,9 +6,9 @@ BotD start a daemon process in server side, and connect to your Slack. When code
 Write, run and debug nodejs code, when good enough, make a cron job to do automation. **The whole process is in slack.**
 
 BotD can be used to:
-> Show team the runnable code, not words;
-> Share team the code and results;
-> Codepen in server side;
+> Show team the runnable code, not words;    
+> Share team the code and results;  
+> Codepen in server side;  
 > Operate in server side;  
 > Hire talent by coding in slack.  
 
@@ -17,9 +17,10 @@ The follow gif is show invite BotD, and write and execute the code, change the c
 ![hello,world](https://dev.botd.io/img/helloworld.gif)
 
 ## Start 
-`
+```
 node ./botd.js -t  <slack bot token> -n <bot name, optional>
-`
+```
+
 ## API
 First, git clone botd or `npm install botd`.
 
@@ -53,28 +54,20 @@ e.g.
 ```
 ! `console.log('hello,world')`
 ```
-```
-! ```
-var i = 0;
-while(i++ < 100)
-    console.log('' + i);
-  ```
-```
 More samples can be found in  https://gist.github.com/datalet/public .
 
 ### Only js code support?
 Yes, the bash and other languages need more works.
 
 ### How to make code automation?
-BotD support Crond - a time-based job scheduler, like *nix.
-
+BotD support Crond - a time-based job scheduler, like *nix.  
 E.g. the following command will run counter adding for each minute, and output the value to your slack.
 ```
 cron add "* * * * ? *" !
-  ```
+\`\`\`
 db.counter = (db.counter || 0) + 1;
 console.log(`current counter ${db.counter}`)
-  ```
+\`\`\`
 ```
 
 ### What happened when trigger a script running?
@@ -100,13 +93,11 @@ Where:
 3. After script run over, bot will check if db changed and do save.
 
 ## Security Issues
- As default, the shell running scripts are given secure enough packages (co, lodash etc, find default configuration in shell/shell.json file).
-
- If you host the BotD as your self, you may want to give more powerful runtime packages. You can set environment variable SHELL_CONFIG (SHELL_CONFIG=/path/to/shell-config ) to override the default shell config file, or directly change file shell/shell.json to add more libs.
+As default, the shell running scripts are given secure enough packages (co, lodash etc, find default configuration in shell/shell.json file).  
+If you host the BotD as your self, you may want to give more powerful runtime packages. You can set environment variable SHELL_CONFIG (SHELL_CONFIG=/path/to/shell-config ) to override the default shell config file, or directly change file shell/shell.json to add more libs.
 
 Maybe you have added "dangerous" package( e.g. fs, child_process, network), here are some suggestions:
-> make botd running as a limited user (no root please).
-> 
+> make botd running as a limited user (no root please).  
 > use cgroup to limit the cpu privilege lower.
 
 ## Storage
@@ -129,14 +120,13 @@ Set the process env DB and start it:
 ```
 DB=mongodb://localhost/botd node ./botd.js -t  <slack bot token>
 ```
+> SaaS use mongodb to store your data.
 
 ### Samples
 For app development, you can find a sample project [Hacker News Bot](https://github.com/botdio/hnbot),
 There are several apps:
-> **Follow** - to follow Hacker News keyword, items or users, make HN like a twitter.
-> 
-> **Checker** - check if a link is submitted in HN automatically.
-> 
+> **Follow** - to follow Hacker News keyword, items or users, make HN like a twitter.  
+> **Checker** - check if a link is submitted in HN automatically.  
 > **Agent** - after bind a HN id, get notification when someone comment/upvote my HN items, or when someone reply my comments.
 
 For shell scripts, you can find example gist in https://gist.github.com/datalet/public
