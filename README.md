@@ -1,93 +1,34 @@
 # BotD - Dev, Daemon and Automation, All in Slack.
 [![Build Status](https://travis-ci.org/botdio/botd.svg?branch=master)](https://travis-ci.org/botdio/botd)
 
-Write, run and debug nodejs code, when good enough, make a cron job to do automation. **The whole process is happening in slack.**
+BotD start a daemon process in server side, and connect to your Slack. When code submit, the process will run it and output will be piped to your slack.
 
-BotD is target on:
-> Team code learning and sharing;  
-> Server side codepen;  
-> Server side operation;  
-> Talent hiring with real coding  
+Write, run and debug nodejs code, when good enough, make a cron job to do automation. **The whole process is in slack.**
+
+BotD can be used to:
+> Show team the runnable code, not words;
+> Share team the code and results;
+> Codepen in server side;
+> Operate in server side;  
+> Hire talent by coding in slack.  
+
+## Demo: Hello, World
+The follow gif is show invite BotD, and write and execute the code, change the code and rerun:
+![hello,world](https://dev.botd.io/img/helloworld.gif)
 
 ## Start 
 `
 node ./botd.js -t  <slack bot token> -n <bot name, optional>
 `
-
-## Basic concepts
-### Bot
- BotD run as a slack bot. it can be added by:
- > Host by botd.io: Goto http://botd.io , and click `Add To Slack` button, you can invite BotD into you slack team.
- > Host by your self: clone code, create a bot in your slack and get the bot token. Then start botd with it.
-
-Then you can send directly message to botd, or `/invite botd` into a channel.
-
-#### App
-  App handle channel events( message send/edit, join, leave etc), and send response to you.
-
-  Apps are hosted in channel space, you can use command `app list/install/uninstall` to manage thems. 
-  
-  Based on storage space, App is separated into two types: _root_ and _common_.
-  All root apps share same storage, the following root apps are supported:
-  > App - common apps management
-  > Help - print help manual
-  > Cron - a time-based job scheduler
-  
-Each common app have its own db storage.
-
-#### Cron App
-Learn from *nix, a time-based job scheduler, execute app or script, with minute unit.
-
-#### Shell App
- A common app, which help you to run scripts.
- Use `app uninstall Shell` to remove it. 
- 
- **When running a script, BotD will spawn a node process, along with a NodeVM to sandbox the script code. Each console log/error will be piped to slack . When timeout, the process will be killed with a error report(for infinitely loop).**
-
- > You can change the file shell/shell.json to add more libs/packages for script running, e.g. fs, child_process, network, etc. But you need npm install the botd project.
- > 
- > You can change the file shell/shell.json timeout value to give more cpu time.
-
-## Security Issue
- As default, the shell running scripts are given configured and secure enough packages (co, lodash etc, find default configuration in shell/shell.json file).
-
- If you host the BotD as your self, you may want to give more powerful runtime packages. You can set environment variable SHELL_CONFIG (SHELL_CONFIG=/path/to/shell-config ) to override the default shell config file, or directly change file shell/shell.json to add more libs.
-
-Maybe you have add "dangerous" package( e.g. fs, child_process, network), here are some suggestions:
-> make botd running as a limited user (no root please).
-> 
-> use cgroup to limit the cpu privilege lower.
-
-### Storage
-Each botd common app(e.g. shell) is assigned a json db. After shell script run done, the changed db will be flushed into storage.
-
-For now, BotD support two storage types: file(default) and mongodb(optional).
-
-### store by file
-Use current dir (./channels.json & ./apps.json)
-```
-node ./botd.js -t <bot token> -name <bot name>
-```
-
-Use specified dir (/path/to/dir/channels.json and /path/to/dir/apps.json)
-```
-DB=file:/path/to/dir node ./botd.js -t <bot token> -name <bot name>
-```
-
-### store by mongodb
-```
-DB=mongodb://localhost/botd node ./botd.js -t  <slack bot token>
-```
-
 ## API
 First, git clone botd or `npm install botd`.
 
-Second (optional), config libs for Shell script runtime:
+Second (optional), configure libs for Shell script runtime:
 ```
 var Shell = require('botd').Shell;
 Shell.addLibs("request", "superagent"); // npm install superagent
 Shell.addLibs("format", `${__dirname}/libs/format`); // my own lib
-// later, you shell script can call format and request.
+// your shell script can call format and request, just like imported packages.
 ```
 
 Third, start bot:
@@ -100,6 +41,95 @@ slack.connect(connector);
 slack.startBot();
 ```
 
+## FAQ
+### How to create a BotD bot?
+ BotD run as a slack bot. it can be connected by:
+ > SaaS: goto botd.io(http://botd.io), click `Add To Slack` button.
+ > Self Host: clone code or `npm install botd`, create a bot in slack and get the bot token. Then start botd with it.
+
+### How to run code?
+Use `!` as prompt to call BotD, after ! write your code. Wrapper \` for oneline code, wrapper \`\`\`  for multiple line code.
+e.g.
+```
+! `console.log('hello,world')`
+```
+```
+! ```
+var i = 0;
+while(i++ < 100)
+    console.log('' + i);
+  ```
+```
+More samples can be found in  https://gist.github.com/datalet/public .
+
+### Only js code support?
+Yes, the bash and other languages need more works.
+
+### How to make code automation?
+BotD support Crond - a time-based job scheduler, like *nix.
+
+E.g. the following command will run counter adding for each minute, and output the value to your slack.
+```
+cron add "* * * * ? *" !
+  ```
+db.counter = (db.counter || 0) + 1;
+console.log(`current counter ${db.counter}`)
+  ```
+```
+
+### What happened when trigger a script running?
+When bot get a script, it will spawn a node process, along with a NodeVM to sandbox the script code. Each console log/error will be piped to one slack message (only if too big to be seperated by slack). 
+
+### What about the infinitely loop?
+If script timeout (infinitely loop), the process will be killed by SIGTERM with an error report (try [infinitely loop](https://gist.github.com/datalet/eb9806a4ae6e6cd567f6a6b46501de16) by yourself ).
+
+### Can I import more packages?
+For SaaS mode, you can only choose packages.
+For Self-Host mode, you can import any packages:
+> change configuration file shell/shell.json to add more libs/packages for script running, e.g. fs, child_process, network, etc. But you need npm install the botd project.
+
+### How to save data?
+Take code [db.counter](https://gist.github.com/datalet/0c1385da7886941097b56ee872d19a82) as an example:
+```
+db.counter = (db.counter || 0) + 1;
+console.dir(db)
+```
+Where:    
+1. You can visit db in script.    
+2. Write db in script    
+3. After script run over, bot will check if db changed and do save.
+
+## Security Issues
+ As default, the shell running scripts are given secure enough packages (co, lodash etc, find default configuration in shell/shell.json file).
+
+ If you host the BotD as your self, you may want to give more powerful runtime packages. You can set environment variable SHELL_CONFIG (SHELL_CONFIG=/path/to/shell-config ) to override the default shell config file, or directly change file shell/shell.json to add more libs.
+
+Maybe you have added "dangerous" package( e.g. fs, child_process, network), here are some suggestions:
+> make botd running as a limited user (no root please).
+> 
+> use cgroup to limit the cpu privilege lower.
+
+## Storage
+For now, BotD support two storage types: file(default) and mongodb(optional).
+
+### stored by file
+Default, use current dir where generate two json file (./channels.json & ./apps.json) as db file:
+```
+node ./botd.js -t <bot token> -name <bot name>
+```
+
+Use specified dir and generate json file: /path/to/dir/channels.json and /path/to/dir/apps.json:
+```
+DB=file:/path/to/dir node ./botd.js -t <bot token> -name <bot name>
+```
+Make sure the dir exist and writable.
+
+### stored by mongodb
+Set the process env DB and start it:
+```
+DB=mongodb://localhost/botd node ./botd.js -t  <slack bot token>
+```
+
 ### Samples
 For app development, you can find a sample project [Hacker News Bot](https://github.com/botdio/hnbot),
 There are several apps:
@@ -107,8 +137,8 @@ There are several apps:
 > 
 > **Checker** - check if a link is submitted in HN automatically.
 > 
-> **Agent** - after bind my HN id, get notification when someone comment/upvote my HN item, or when someone reply my comment.
+> **Agent** - after bind a HN id, get notification when someone comment/upvote my HN items, or when someone reply my comments.
 
 For shell scripts, you can find example gist in https://gist.github.com/datalet/public
 
-Welcome to fire issues in github, or send pull request!
+Welcome to fire issues in github, or send pull request, or use SaaS for life easy.
