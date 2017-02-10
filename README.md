@@ -79,7 +79,7 @@ If script timeout (infinitely loop), the process will be killed by SIGTERM with 
 ### Can I import more packages?
 For SaaS mode, you can only choose packages.
 For Self-Host mode, you can import any packages:
-> change configuration file shell/shell.json to add more libs/packages for script running, e.g. fs, child_process, network, etc. But you need npm install the botd project.
+> change configuration file shell/shell.json to add more libs/packages for script running, e.g. fs, child_process, network, etc. Of couse, you need npm install the packages in your project.
 
 ### How to save data?
 Take code [db.counter](https://gist.github.com/datalet/0c1385da7886941097b56ee872d19a82) as an example:
@@ -88,17 +88,18 @@ db.counter = (db.counter || 0) + 1;
 console.dir(db)
 ```
 Where:    
-1. You can visit db in script.    
-2. Write db in script    
+1. Directly visit db for read and write.    
+2. Write db in script
 3. After script run over, bot will check if db changed and do save.
+> Notice, if the script is killed for timeout, db will not be saved!
 
 ## Security Issues
-As default, the shell running scripts are given secure enough packages (co, lodash etc, find default configuration in shell/shell.json file).  
-If you host the BotD as your self, you may want to give more powerful runtime packages. You can set environment variable SHELL_CONFIG (SHELL_CONFIG=/path/to/shell-config ) to override the default shell config file, or directly change file shell/shell.json to add more libs.
+As default, the shell running scripts are given secure enough packages (co, lodash etc).  
+Maybe you have added "dangerous" package( e.g. fs, child_process - crazy `rm -fr /` :(, even network), here are some suggestions:
+> start botd running as a limited user (no root please).  
+> use cgroup to limit the cpu privilege lower.  
 
-Maybe you have added "dangerous" package( e.g. fs, child_process, network), here are some suggestions:
-> make botd running as a limited user (no root please).  
-> use cgroup to limit the cpu privilege lower.
+**YOU NEED UNDERSTAND WHAT ARE YOU DOING WHEN HOST BOTD IN YOUR PRODCUTION SERVER!**
 
 ## Storage
 For now, BotD support two storage types: file(default) and mongodb(optional).
