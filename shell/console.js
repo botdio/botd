@@ -63,11 +63,7 @@ class Console {
     log() {
         var sb = new SlackBuilder();
         _.each(arguments, obj => {
-            if(Console.isItem(obj)) {
-                sb.text(SlackText.toSlack(obj)).text("\n");
-            }else{
-                sb.text(obj + " ");
-            }
+            sb.text(obj + " ");
         });
         this.buffer.push(sb);
         return this.safeSend();
