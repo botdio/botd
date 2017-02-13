@@ -29,6 +29,7 @@ class Connector extends EventEmitter {
         this.on('left', this.onLeft);
         
         this.on('message', this.onMsg);
+        slack.connect(this);
     }
     onStart(event) {
         logger.info(`connector: recv start event`, event);

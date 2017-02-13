@@ -84,7 +84,7 @@ class Shell extends EventEmitter{
                         this.attachTs(stack.ts(), sandbox.console.ts);
                     } 
                 });
-                logger.error(`shell: fail to execute code ${code}`, err);
+                logger.error(`shell: fail to execute code ${cmd.code}`, err);
             }
             break;
         }

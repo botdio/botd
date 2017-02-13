@@ -24,6 +24,7 @@ function runUnsafeScript(script, params, callback) {
   var timeout = params.timeout || 5 * 1000;
   var workerJs = `${__dirname}/worker.js`;
   var worker = cp.fork(workerJs, [script, JSON.stringify(context)]);
+  // var worker = cp.spawn("node", [workerJs, script, JSON.stringify(context)], {env: process.env});
   worker.on('message', function(data) {
     console.log(`run_script: recv child process message ${JSON.stringify(data)}`);
     var c = params.console || console;

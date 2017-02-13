@@ -2,6 +2,6 @@ bot.log*
 node_modules
 dev.sh
 *.log
-index.html
+*.html
 channels.json
 apps.json
