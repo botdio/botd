@@ -43,7 +43,7 @@ slack.startBot();
 
 Your bot should be shown in your slack im list!
 
-**Find FAQ in [FAQ]('./FAQ.md')**
+**Find FAQ in [FAQ](./FAQ.md)**
 
 ## Security Issues
 As default, the running scripts are given secure enough packages (co, lodash etc).  
