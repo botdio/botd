@@ -1,11 +1,13 @@
 'use strict';
 var App = require('./app');
-var Shell = require('../shell');
 var Help = require('./help');
 var Crond = require('./crond');
 
+var Bash = require('../bash');
+var Node = require('../node');
+
 module.exports = {
     root: [App, Crond, Help],
-    common: [Shell],
-    defaults: [Shell]
+    common: [Bash, Node],
+    defaults: [Bash, Node]
 }
