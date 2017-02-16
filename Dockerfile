@@ -18,4 +18,4 @@ ADD package.json ./
 RUN npm i --production
 ADD . /var/botd/current
 
-CMD ["node", "./botd.js"]
+CMD ["node", "./botd.js -h"]
