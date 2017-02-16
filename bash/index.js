@@ -25,9 +25,11 @@ class Bash extends EventEmitter{
         
         this.on('slack', this.onSlack);
         this.on('timer', this.onTimer);
+        this.terminals = {};
     }
 
-    match(cid, text) {
+    match(cid, text, ts) {
+        if(ts && this.terminals[ts]) return true;
         var tokens = P.tokenize(text);
         return _.find(SHELL_RESOLVE_KEYWORDS, w => w === (tokens[0] || "").toLowerCase());
     }
@@ -46,58 +48,65 @@ class Bash extends EventEmitter{
         var cid = event.cid;
         var text = event.text;
         var ts = event.ts;
+        var action = event.action;
         var outTs = (this.db.outs || {})[ts];
-        logger.debug(`bash: code ts ${ts} out ts ${outTs}`)
+        logger.debug(`bash: code ts ${ts} out ts ${outTs} action ${action}`)
 
-        if(!this.match(cid, text)) return ;
+        if(!this.match(cid, text, ts)) return ;
 
+        var output = new Console(this.push.bind(this), outTs);
+        if(action === "deleted") {
+           try{
+                var terminal = this.terminals[ts];
+                if(terminal) {
+                    terminal.kill();
+                    output.error(new SlackBuilder(`process ${terminal.pid} is killed`).code().build());
+                    logger.debug(`bash: process ${terminal.pid} is killed for message deleted`);
+                }else{
+                    logger.debug(`bash: deleted message ${ts} have no running terminal, ignore`);
+                }                    
+            }
+            catch(err) {
+                logger.error(`bash: delete message err`, err);
+            }
+            return ;
+        }
+                
         var cmd = Bash.parse(text);
         switch(cmd.type) {
             case SHELL_TYPE.RUN:
-            var output = new Console(this.push.bind(this), outTs);
-            try{
-                this.execRunProcess(cmd.code, output);
-            }catch(err) {
-                output.error(err).then(() => {
-                    if(output.ts){
-                        this.attachTs(ts, output.ts);
-                    }
-                });
-                logger.error(`bash: fail to execute code ${cmd.code}`, err);
-            }
+                try{
+                    this.execRunProcess(ts, cmd.code, output);
+                }catch(err) {
+                    output.error(err).then(() => {
+                        if(output.ts){
+                            this.attachTs(ts, output.ts);
+                        }
+                    });
+                    logger.error(`bash: fail to execute code ${cmd.code}`, err);
+                }
+            
             break;
         }
     }
-    execRunProcess(code, output) {
+    execRunProcess(ts, code, output) {
         var terminal = require('child_process').spawn('bash');
         terminal.stdout.on('data', function (data) {
             output.log(data);
         });
-
+        var terminals = this.terminals;
         terminal.on('exit', function (exitCode) {
             if(exitCode !== 0)
-                output.log('bash exit code :' + exitCode);
+                output.log('bash exit abnormally!');
+            if(terminals[ts] && terminals[ts] === terminal){
+                delete terminals[ts];
+            }
         });
+        terminals[ts] = terminal;
+        logger.debug(`bash: ts ${ts} attached to terminal ${terminal.pid}`);
         terminal.stdin.write(code);
         terminal.stdin.end();
-    }
-    processEventCallback(stack, sandbox, metrics, err, data) {
-        if(this.isNormalExit(err, data)) {
-            this.checkDbChangesAndUpdate(stack.oldDbStr(), metrics.curDb(), sandbox.console, metrics);
-            logger.info(`shell: code ${stack.hash()} normal exit and handle db changes update in memory and storage`);
-        }else if(this.isAbnormalExit(err, data)) {
-            logger.info(`shell: code ${stack.hash()} abnormal exit ${data}, not change db data`);
-            sandbox.console.error(new SlackBuilder(`Abnormal program, killed by signal ${data}, please check your code! `).code().build());
-        }
-        else if(data && data.db) {
-            metrics.setCurDb(data.db);
-        }
-        else{
-            // logger.debug(`shell: code ${stack.hash()} unable handle event data err ${JSON.stringify(err)} data ${JSON.stringify(data)}`)
-        }
-        if(sandbox.console.ts){
-            this.attachTs(stack.ts(), sandbox.console.ts);
-        }
+        return terminal;
     }
     attachTs(ts, out) {
         if(!ts) return ;

@@ -89,7 +89,8 @@ function run(code, ctx) {
     var sandbox = Object.assign(ctx, {console: output, db: db});
     _.each(ctx.libs, (file, name) => {
         try{
-            sandbox[name] = require(file || name);            
+            sandbox[name] = require(file || name);        
+            sandbox.require = require;    
         }catch(err) {
             output.error(`fail to load lib ${name} from ${file}`,err);
             process.exit(-2);

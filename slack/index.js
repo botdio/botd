@@ -76,13 +76,20 @@ class SlackBot {
                 if(msg.user && msg.user === "USLACKBOT") return ;
                 var ts = msg.ts;
                 var text = msg.text;
+                var action = "created";
                 if(msg.subtype && msg.subtype === "message_changed") {
                   ts = msg.message.ts;
                   text = msg.message.text;
+                  action = "updated";
+                }
+                else if(msg.subtype && msg.subtype === "message_deleted") {
+                  ts = msg.deleted_ts;
+                  action = "deleted";        
                 }
 
                 var processedMsg = this.preHandleMsg(channel, text);
-                this.connector.emit("message", {cid: channel, text: processedMsg.text, type: processedMsg.type, ts: ts});
+                this.connector.emit("message", {cid: channel, text: processedMsg.text, 
+                          type: processedMsg.type, ts: ts, action: action});
                 break;
 
               default:
@@ -95,6 +102,7 @@ class SlackBot {
     }
 
     preHandleMsg(channel, text){
+      if(!text) return {type: CONSTS.MSG_TYPE.KNOWN, text: text};;
       var withoutBotName = SlackBot.withoutBotId(this.bot.self.id, this.bot.self.name, text);
       // logger.debug(`slack: text ${text} without bot name ${withoutBotName}`);
       //check if im
@@ -104,7 +112,7 @@ class SlackBot {
       if(withoutBotName !== text) {
         return {type: CONSTS.MSG_TYPE.MENTION, text: withoutBotName};
       }
-      return {type: CONSTS.MSG_TYPE.KNOWN, text: text, };
+      return {type: CONSTS.MSG_TYPE.KNOWN, text: text};
     }
 
     *send(channel, text, attachments) {

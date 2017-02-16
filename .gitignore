@@ -5,3 +5,5 @@ dev.sh
 *.html
 channels.json
 apps.json
+data
+logs

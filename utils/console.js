@@ -14,19 +14,21 @@ class Console {
         this.buffer = [];
         this.sentCount = 0; // already sent count
         this.push = push;
+        this.truncatedCount = 0;
     }
     _truncate() {
+        // if(this.truncatedCount > 2)  throw new Error("too many messages sent, ignored");
         var text = this.toMsg();
         if(text.length > MAX_TEXT_SIZE) {
             //truncate and create a new console
             this.buffer = this.buffer.slice(this.sentCount, this.buffer.length);
             // console.log(`console: text too large(${text.length} > ${MAX_TEXT_SIZE}) truncate ${this.sendCount} current ${this.buffer.length} size ${text.length}`);
-            this.ts = undefined;
+            // this.ts = undefined;
+            this.truncatedCount += this.sentCount;
             this.sentCount = 0;
-            text = this.toMsg();
+            text = `NOTICE: message too large, already truncated\n ${this.toMsg()}`;
         }
-        return text;
-        // return text.length > MAX_TEXT_SIZE ? this._truncate() : text;       
+        return text;      
     }
     _send() {
         return co(this.doSend())
