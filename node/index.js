@@ -67,7 +67,7 @@ class Node extends EventEmitter{
         var cmd = Node.parse(text);
         switch(cmd.type) {
             case SHELL_TYPE.RUN:
-            var code = this.fmd(cmd.code);
+            var code = P.fmt(cmd.code);
             var sandbox = this.buildSandbox(outTs);
             var options = this.options();
 
@@ -104,11 +104,6 @@ class Node extends EventEmitter{
     }
     isReachLimitTooMuch(str) {
         return str.length > CONST.DEFAULT_DB_SIZE_LIMIT * 1.2;
-    }
-    fmt(code) {
-        const CHARS = {"\&gt\;" : ">","\&lt\;" : "<", "\&amp\;": "&"};
-        _.map(CHARS, (v,k) => code = code.replace(new RegExp(k, 'g'), v));
-        return code;
     }
     checkCode(code) {
         esprima.parse(code);
@@ -149,8 +144,8 @@ class Node extends EventEmitter{
             this.checkCode(code);
             logger.debug(`node: code ${codeTs} pass the ast checking`);
         }catch(err) {
-            logger.debug(`node: code ${codeTs} not pass the ast checking`);
-            throw err;
+            logger.debug(`node: code ${codeTs} not pass the ast checking ${err.message}`);
+            return ;
         }
         RunCode(code,{
                 db: sandbox.db, 

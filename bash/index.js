@@ -32,7 +32,7 @@ class Bash extends EventEmitter{
     }
 
     match(cid, text, ts) {
-        if(ts && this.terminals[ts]) return true;
+        if(ts && this.db.terminals[ts]) return true;
         var tokens = P.tokenize(text);
         return _.find(BASH_CMDS, w => w === (tokens[0] || "").toLowerCase());
     }
@@ -84,7 +84,8 @@ class Bash extends EventEmitter{
         switch(cmd.type) {
             case BASH_SUB_TYPE.RUN:
                 try{
-                    this.execRunProcess(ts, cmd.code, output);
+                    var code = P.fmt(cmd.code);
+                    this.execRunProcess(ts, code, output);
                 }catch(err) {
                     output.error(err).then(() => {
                         if(output.ts){
