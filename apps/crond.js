@@ -177,7 +177,7 @@ class Cron extends EventEmitter{
                             time: time, cmd: cmd, code: code,
                             schedule: s, timer: t, app: app});
                         this.push(new SlackBuilder("OK!")
-                            .text(" Command").code(cmd.relace(/\`/g, "'"))
+                            .text(" Command").code(cmd.replace(/\`/g, "'"))
                             .text("install done, next run time")
                             .code(next[0]).i()
                             .build());
