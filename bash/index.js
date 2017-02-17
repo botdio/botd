@@ -8,12 +8,14 @@ var CONST = require('../constants');
 var logger = require('../logger');
 var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
+var spawn = require("child_process").spawn;
 
-const SHELL_TYPE = {
-    RUN: "RUN"
+const BASH_SUB_TYPE = {
+    RUN: "RUN",
+    INFO: "INFO"
 }
 
-const SHELL_RESOLVE_KEYWORDS = ["!bash"];
+const BASH_CMDS = ["!bash"];
 
 class Bash extends EventEmitter{
     constructor(ctx) {
@@ -25,13 +27,14 @@ class Bash extends EventEmitter{
         
         this.on('slack', this.onSlack);
         this.on('timer', this.onTimer);
-        this.terminals = {};
+
+        this.db.terminals = this.db.terminals || {};
     }
 
     match(cid, text, ts) {
         if(ts && this.terminals[ts]) return true;
         var tokens = P.tokenize(text);
-        return _.find(SHELL_RESOLVE_KEYWORDS, w => w === (tokens[0] || "").toLowerCase());
+        return _.find(BASH_CMDS, w => w === (tokens[0] || "").toLowerCase());
     }
     onTimer(event) {
         var code = event.code;
@@ -50,20 +53,25 @@ class Bash extends EventEmitter{
         var ts = event.ts;
         var action = event.action;
         var outTs = (this.db.outs || {})[ts];
-        logger.debug(`bash: code ts ${ts} out ts ${outTs} action ${action}`)
+        logger.debug(`bash: code ${ts} out ts ${outTs} action ${action}`)
 
         if(!this.match(cid, text, ts)) return ;
 
         var output = new Console(this.push.bind(this), outTs);
         if(action === "deleted") {
            try{
-                var terminal = this.terminals[ts];
+                var terminal = this.db.terminals[ts];
                 if(terminal) {
-                    terminal.kill();
-                    output.error(new SlackBuilder(`process ${terminal.pid} is killed`).code().build());
-                    logger.debug(`bash: process ${terminal.pid} is killed for message deleted`);
+                    logger.debug(`bash: code ${ts} is deleted and find running process ${terminal.pid}, send kill`)
+                    var kill = spawn("kill", ["-9", terminal.pid]);
+                    kill.on(`close`, (exitCode) => {
+                        logger.debug(`bash: code ${ts} deleted and killed exitCode`); 
+                        output.error(new SlackBuilder(`process ${terminal.pid} is killed`).code().build());
+                    });
+                    delete this.db.terminals[ts];
+                    this.save();
                 }else{
-                    logger.debug(`bash: deleted message ${ts} have no running terminal, ignore`);
+                    logger.debug(`bash: code ${ts} have no running terminal, ignore`);
                 }                    
             }
             catch(err) {
@@ -74,7 +82,7 @@ class Bash extends EventEmitter{
                 
         var cmd = Bash.parse(text);
         switch(cmd.type) {
-            case SHELL_TYPE.RUN:
+            case BASH_SUB_TYPE.RUN:
                 try{
                     this.execRunProcess(ts, cmd.code, output);
                 }catch(err) {
@@ -83,10 +91,16 @@ class Bash extends EventEmitter{
                             this.attachTs(ts, output.ts);
                         }
                     });
-                    logger.error(`bash: fail to execute code ${cmd.code}`, err);
+                    logger.error(`bash: fail to execute code ${ts}`, err);
                 }
-            
             break;
+            case BASH_SUB_TYPE.INFO: {
+                var running = new SlackBuilder('running process : ').i();
+                var procs = _.map(this.db.terminals, (t, ts) => `pid: ${t.pid} , cmd: \`${t.cmd}\`_`).join("\n")
+                procs ? running.text(procs) : running.i(`none`);
+                this.push(running.build());
+                break;
+            }
         }
     }
     execRunProcess(ts, code, output) {
@@ -94,15 +108,18 @@ class Bash extends EventEmitter{
         terminal.stdout.on('data', function (data) {
             output.log(data);
         });
-        var terminals = this.terminals;
+        var terminals = this.db.terminals;
+        var that = this;
         terminal.on('exit', function (exitCode) {
             if(exitCode !== 0)
-                output.log('bash exit abnormally!');
-            if(terminals[ts] && terminals[ts] === terminal){
+                output.log('`_bash exit abnormal_`');
+            if(terminals[ts] && terminals[ts].pid === terminal.pid) {
                 delete terminals[ts];
+                that.save();
             }
         });
-        terminals[ts] = terminal;
+        terminals[ts] = {pid: terminal.pid, cmd: code};
+        this.save();
         logger.debug(`bash: ts ${ts} attached to terminal ${terminal.pid}`);
         terminal.stdin.write(code);
         terminal.stdin.end();
@@ -124,11 +141,12 @@ class Bash extends EventEmitter{
 
 Bash.parse = function(text) {
     var tokens = P.tokenize(text);
-    var cmd = _.find(SHELL_RESOLVE_KEYWORDS, s => s === tokens[0])
-    if( cmd ) {
+    var cmd = _.find(BASH_CMDS, s => s === tokens[0])
+    if(cmd) {
         text = text.substring(text.indexOf(cmd) + cmd.length);
-        var code = P.code(text).trim();
-        if(code) return {type: SHELL_TYPE.RUN, code: code};
+        var code = (P.code(text || "") || "").trim();
+        if(code) return {type: BASH_SUB_TYPE.RUN, code: code};
+        else return {type: BASH_SUB_TYPE.INFO};
     }
 }
 

@@ -193,11 +193,11 @@ class Connector extends EventEmitter {
         this.channels = _.filter(this.channels, c => c.cid !== cid);
     }
     onMsg(event) {
-        logger.info(`connector: recv message event`, event.ts, event.action);
+        logger.info(`connector: recv message event`, event.cid, event.ts, event.action);
         try{
             this.exec(event);            
         }catch(err) {
-            logger.error(`connector: fail to run slack command ${text}`, err);
+            logger.error(`connector: fail to run slack command ${event.text}`, err);
         }
     }
     exec(event){
@@ -209,7 +209,7 @@ class Connector extends EventEmitter {
                     app.emit('slack', event);
                 }
             }catch(err) {
-                logger.error(`connector: fail to emit slack command ${text} into app ${app.constructor.name} cid ${cid}`, err);
+                logger.error(`connector: fail to emit slack command ${event.text} into app ${app.constructor.name} cid ${event.cid} ts ${event.ts}`, err);
             }
         });
     }

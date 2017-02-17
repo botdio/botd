@@ -1,14 +1,13 @@
 'use strict';
 var _ = require('lodash');
-var request = require('superagent');
 var EventEmitter = require('events');
 var esprima = require('esprima');
 var co = require('co');
+var md5 = require('js-md5');
 
 var Console = require('../utils/console');
 var CONST = require('../constants');
 var RunCode = require('./run_script');
-var Stack = require('./stack');
 var logger = require('../logger');
 var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
@@ -49,10 +48,10 @@ class Node extends EventEmitter{
         if(console && !console.sendDone() && console._send) {
             setTimeout(() => {
                 console._send();
-                logger.info(`shell: flush the console after code run, console ${console.toMsg()}`);
+                logger.info(`node: flush the console after code run, console ${console.toMsg()}`);
             },3 * 1000);
         }else{
-            logger.info(`shell: not need to flush the console, console ${console.toMsg()}`);
+            logger.info(`node: not need to flush the console, console ${console.toMsg()}`);
         }
     }
 
@@ -61,31 +60,31 @@ class Node extends EventEmitter{
         var text = event.text;
         var ts = event.ts;
         var outTs = (this.db.outs || {})[ts];
-        logger.debug(`shell: code ts ${ts} out ts ${outTs}`)
+        logger.debug(`node: code ts ${ts} out ts ${outTs}`)
 
         if(!this.match(cid, text)) return ;
 
         var cmd = Node.parse(text);
         switch(cmd.type) {
             case SHELL_TYPE.RUN:
-            var stack = new Stack(this.fmt(cmd.code),this.db, ts);
+            var code = this.fmd(cmd.code);
             var sandbox = this.buildSandbox(outTs);
             var options = this.options();
 
             try{
-                this.execRunProcess(stack, sandbox, options);
+                this.execRunProcess(code, ts, sandbox, options);
             }catch(err) {
                 sandbox.console.error(err).then(() => {
                     if(sandbox.console.ts){
-                        this.attachTs(stack.ts(), sandbox.console.ts);
+                        this.attachTs(ts, sandbox.console.ts);
                     } 
                 });
-                logger.error(`shell: fail to execute code ${cmd.code}`, err);
+                logger.error(`node: fail to execute code ${ts}`, err);
             }
             break;
         }
     }
-    checkDbChangesAndUpdate(old, curDb, c) {
+    checkDbChangesAndUpdate(old, codeTs, curDb, c) {
         var after = JSON.stringify(curDb);
         if(old !== after){
             if(after.length > old.length && this.isReachLimitTooMuch(after)){
@@ -96,7 +95,7 @@ class Node extends EventEmitter{
             }else{
                 this.db = curDb;
                 this.save();
-                logger.info(`shell: after execute code db changed ${after.length - after.length}, update in memory and saved in storage`);
+                logger.info(`node: after execute code ${codeTs} db changed ${after.length - after.length}, update in memory and saved in storage`);
             }
         }
     }
@@ -126,9 +125,6 @@ class Node extends EventEmitter{
             libs: libs
         }
     }
-    buildMetrics(stack) {
-        return new Metrics(stack);
-    }
     buildSandbox(ts) {
         var sandbox = {
             db: this.db,
@@ -140,8 +136,8 @@ class Node extends EventEmitter{
         sandbox.global = sandbox;
         return sandbox;
     }
-    execRunProcess(stack, sandbox, options) {
-        var code = stack.code();
+    execRunProcess(code, codeTs, sandbox, options) {
+        var oldDbStr = JSON.stringify(sandbox.db);
         var funcName = "main";
         code = `'use strict'; function *${funcName} () { ${code}
         }
@@ -151,7 +147,9 @@ class Node extends EventEmitter{
         `
         try{
             this.checkCode(code);
+            logger.debug(`node: code ${codeTs} pass the ast checking`);
         }catch(err) {
+            logger.debug(`node: code ${codeTs} not pass the ast checking`);
             throw err;
         }
         RunCode(code,{
@@ -162,23 +160,23 @@ class Node extends EventEmitter{
                 console: sandbox.console
             },
             (err, data) => {
-                this.processEventCallback(stack, sandbox, err, data);
+                this.processEventCallback(oldDbStr, codeTs, sandbox, err, data);
             }
         );
     }
-    processEventCallback(stack, sandbox, err, data) {
+    processEventCallback(oldDbStr, codeTs, sandbox, err, data) {
         if(this.isNormalExit(err, data)) {
-            this.checkDbChangesAndUpdate(stack.oldDbStr(), sandbox.console);
-            logger.info(`shell: code ${stack.hash()} normal exit and handle db changes update in memory and storage`);
+            this.checkDbChangesAndUpdate(oldDbStr, codeTs, sandbox.console);
+            logger.info(`node: code ${codeTs} normal exit`);
         }else if(this.isAbnormalExit(err, data)) {
-            logger.info(`shell: code ${stack.hash()} abnormal exit ${data}, not change db data`);
+            logger.info(`node: code ${codeTs} abnormal exit ${data}, not change db data`);
             sandbox.console.error(new SlackBuilder(`Abnormal program, killed by signal ${data}, please check your code! `).code().build());
         }
         else{
-            // logger.debug(`shell: code ${stack.hash()} unable handle event data err ${JSON.stringify(err)} data ${JSON.stringify(data)}`)
+            // logger.debug(`node: code ${stack.hash()} unable handle event data err ${JSON.stringify(err)} data ${JSON.stringify(data)}`)
         }
         if(sandbox.console.ts){
-            this.attachTs(stack.ts(), sandbox.console.ts);
+            this.attachTs(codeTs, sandbox.console.ts);
         }
     }
     attachTs(ts, out) {
