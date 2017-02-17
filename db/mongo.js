@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 const constants = require('../constants');
 
-mongoose.connect(constants.DB);
+mongoose.connect(constants.DB); // "mongodb://localhost/botd"
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {

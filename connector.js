@@ -63,12 +63,13 @@ class Connector extends EventEmitter {
                 logger.info(`connector: already load app ${app.app} in channel ${app.cid}, update db`);
                 return ;
             }
+            logger.debug(`connector: bind the app ${AClz.name}/${app.app} cid ${app.cid} db`, app.db)
             this.apps.push(new AClz({
-            cid: app.cid,
-            db: app.db, //no db
-            push: this.push.bind(this, app.cid),
-            save: this.saveAppDb.bind(this, app.cid, AClz.name, app.db)}));
-            logger.info(`connector: load the app ${app.app} for team ${tid} channel ${app.cid} db`); 
+                cid: app.cid,
+                db: app.db,
+                push: this.push.bind(this, app.cid),
+                save: this.saveAppDb.bind(this, app.cid, AClz.name, app.db)}));
+            logger.info(`connector: load the app ${app.app} for team ${tid} channel ${app.cid} db`, app.db); 
         });
 
         this.notifyAppEvent("app_loaded");
@@ -120,7 +121,7 @@ class Connector extends EventEmitter {
         }
         this.apps.push(new A({
             cid: cid,
-            db: db, //no db
+            db: db,
             push: this.push.bind(this, cid),
             save: this.saveAppDb.bind(this, cid, A.name, db)}));
         logger.info(`connector: install app ${A.name} in channel ${cid} done`)        
@@ -160,6 +161,7 @@ class Connector extends EventEmitter {
 
     //common app saved
     saveAppDb(cid, appName, db) {
+        logger.debug(`connector: app ${appName} in cid ${cid} saving db ...`, db);
         co(AppDb.updateDb(appName, cid, db))
         .catch(err => {
             logger.error(`connector: fail to update app ${appName} cid ${cid} db`, err);

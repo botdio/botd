@@ -88,9 +88,7 @@ class Bash extends EventEmitter{
                     this.execRunProcess(ts, code, output);
                 }catch(err) {
                     output.error(err).then(() => {
-                        if(output.ts){
-                            this.attachTs(ts, output.ts);
-                        }
+                        this.attachTs(ts, output.ts);
                     });
                     logger.error(`bash: fail to execute code ${ts}`, err);
                 }
@@ -105,15 +103,15 @@ class Bash extends EventEmitter{
         }
     }
     execRunProcess(ts, code, output) {
+        var that = this;
         var terminal = require('child_process').spawn('bash');
         terminal.stdout.on('data', function (data) {
-            output.log(data);
+            output.log(data).then(() => that.attachTs(ts, output.ts));
         });
         var terminals = this.db.terminals;
-        var that = this;
         terminal.on('exit', function (exitCode) {
             if(exitCode !== 0)
-                output.log('`_bash exit abnormal_`');
+                output.log('_`bash exit abnormal`_').then(() => that.attachTs(ts, output.ts));
             if(terminals[ts] && terminals[ts].pid === terminal.pid) {
                 delete terminals[ts];
                 that.save();
@@ -127,8 +125,10 @@ class Bash extends EventEmitter{
         return terminal;
     }
     attachTs(ts, out) {
-        if(!ts) return ;
+        logger.debug(`bash: attach ts ${ts} into out ts ${out}...`);
+        if(!ts || !out) return ;
         this.db.outs = this.db.outs || {};
+        if(this.db.outs[ts] === out) return ;
         this.db.outs[ts] = out;
         this.save();
     }
