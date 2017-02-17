@@ -36,13 +36,12 @@ class Node extends EventEmitter{
         return _.find(NODE_CMDS, w => w === (tokens[0] || "").toLowerCase());
     }
     onTimer(event) {
-        var code = event.code;
+        var cmd = event.cmd;
         var jobid = event.id;
         var verbose = event.verbose || false;
-        if(!code) return ;
         if(verbose)
-            this.push(new SlackBuilder(`start to run the cron job `).b(jobid).build());
-        this.onSlack({cid: this.cid, text: `!\n\`\`\`\n${code}\n\`\`\``});
+            this.push(new SlackBuilder(`start to run the cron job `).b(jobid).i().build());
+        this.onSlack({cid: this.cid, text: cmd});
     }
 
     onSlack(event) {

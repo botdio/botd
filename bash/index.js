@@ -37,14 +37,13 @@ class Bash extends EventEmitter{
         return _.find(BASH_CMDS, w => w === (tokens[0] || "").toLowerCase());
     }
     onTimer(event) {
-        var code = event.code;
+        var cmd = event.cmd;
         var jobid = event.id;
         var verbose = event.verbose || false;
         // logger.info(`shell: get the cron timer call, code ${code}`);
-        if(!code) return ;
         if(verbose)
-            this.push(new SlackBuilder(`start to run the cron job `).b(jobid).build());
-        this.onSlack({cid: this.cid, text: `!\n\`\`\`\n${code}\n\`\`\``});
+            this.push(new SlackBuilder(`start to run the cron job `).b(jobid).i().build());
+        this.onSlack({cid: this.cid, text: cmd});
     }
 
     onSlack(event) {

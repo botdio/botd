@@ -45,6 +45,7 @@ class Cron extends EventEmitter{
         logger.debug(`crond: remove app event`, oldCount, this.tasks.length);
     }
     updateJobs() {
+        logger.debug(`crond: updating cron jobs db`, this.db);
         try{
             _.each(this.db.cronjobs || [], job=>{
                 // app is load?
@@ -84,10 +85,9 @@ class Cron extends EventEmitter{
             case "a":
             case "-a":
                 var cmd = Cron.parseCmd(text);
-                var code = Cron.parseCode(text);
                 var time = Cron.parseTime(text);
                 if(!cmd  || !time) return ;
-                return {type: CRON_CMD_TYPE.ADD, time: time, cmd: cmd, code: code}
+                return {type: CRON_CMD_TYPE.ADD, time: time, cmd: cmd}
             break;
 
             case "delete":
@@ -177,7 +177,7 @@ class Cron extends EventEmitter{
                             time: time, cmd: cmd, code: code,
                             schedule: s, timer: t, app: app});
                         this.push(new SlackBuilder("OK!")
-                            .text(" Command").code(cmd)
+                            .text(" Command").code(cmd.relace(/\`/g, "'"))
                             .text("install done, next run time")
                             .code(next[0]).i()
                             .build());
@@ -230,7 +230,7 @@ class Cron extends EventEmitter{
                     .code(task.time)
                     .text(' , delete by ').code(`cron delete ${task.id}`)
                     .text(', command')
-                    .code(task.cmd);
+                    .code(task.cmd.replace(/\`/g,"'"));
     if(task.code)
         sb.text("code:").i().pre(task.code);
     else
@@ -238,7 +238,6 @@ class Cron extends EventEmitter{
     return sb.build();
     }
 }
-const PATTERN = /(["|'])(.*)\1\s(['|\`|"]*)([\w|!].*)\2/;
 
 Cron.parseTime  = function(text) {
     var ms = text.match(/(["|'])(.*)\1\s/)
@@ -246,12 +245,8 @@ Cron.parseTime  = function(text) {
 }
 
 Cron.parseCmd = function(text) {
-    var m = text.match(/(["|']).*\1\s(['|\`|"]*)([\w|!].*)\2[\`]?/);
-    if(m) return m[3];
-}
-
-Cron.parseCode = function(text) {
-    return P.code(text);
+    var ms = text.match(/(["|'])(.*)\1\s((.|[\r\n])*)/)
+    if(ms) return ms[3];
 }
 
 Cron.help = function(verbose) {
@@ -259,7 +254,7 @@ Cron.help = function(verbose) {
         return `_*Cron* : cron job managment, a time-based job scheduler _
         _\`cron list\` - list cron jobs_
         _\`cron add\` - add cron job_
-        _.e.g \`cron add "*/10 * * * ? *" "db.counter=db.counter+1||1; console.log(db.counter)" \` every 10 minutes, counter++ and print it_
+        _.e.g \`cron add "*/10 * * * ? *" !node "db.counter=db.counter+1||1; console.log(db.counter)" \` every 10 minutes, counter++ and print it_
         _\`cron delete <job index>\` - add an cron job_
         _\`cron set <key> <value>\` - set cron job settings_
             `;

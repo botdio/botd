@@ -19,10 +19,10 @@ exports.fetchChannels = function *(tid) {
 
 exports.updateDb = function* (cid, db) {
     var dbStr = JSON.stringify(db);
-    var options = { upsert: true, multi: true};
-    DB.channels.update({id: cid}, {data: dbStr}, options);    
+    var options = { upsert: false, multi: true};
+    DB.channels.update({cid: cid}, {data: dbStr}, options);    
 }
 
 exports.deleteDb = function* (cid) {
-    DB.channels.remove({id: cid}, true);    
+    DB.channels.remove({cid: cid}, true);    
 }

@@ -95,12 +95,12 @@ class Connector extends EventEmitter {
         _.each(Apps.root, rootApp => {
             this.apps.push(new rootApp({
             cid: cid,
-            db: db, //no db
+            db: db,
             push: this.push.bind(this, cid),
             save: this.saveChannelDb.bind(this, cid, db),
             apps: this.apps,
             connector: this}));
-            logger.info(`connector: install root app ${rootApp.name} in channel ${cid} done`);
+            logger.info(`connector: install root app ${rootApp.name} in channel ${cid} done with db ${JSON.stringify(db)}`);
         })
     }
 
