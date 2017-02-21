@@ -71,8 +71,7 @@ class SlackBot {
               case "message":
                 var channel = msg.channel;
                 logger.info(`slack: channel ${channel} got message ${JSON.stringify(msg)}`);
-                if(msg.bot_id) return ; //a bot message, ignore
-                // if(msg.subtype) return ; // special message, ignore
+                // if(msg.bot_id) return ; //a bot message, ignore
                 if(msg.user && msg.user === "USLACKBOT") return ;
                 var ts = msg.ts;
                 var text = msg.text;
