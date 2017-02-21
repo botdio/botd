@@ -31,8 +31,8 @@ class Node extends EventEmitter{
         this.on('timer', this.onTimer);
     }
 
-    match(cid, text) {
-        var tokens = P.tokenize(text);
+    match(event) {
+        var tokens = P.tokenize(event.text);
         return _.find(NODE_CMDS, w => w === (tokens[0] || "").toLowerCase());
     }
     onTimer(event) {
@@ -51,7 +51,7 @@ class Node extends EventEmitter{
         var outTs = (this.db.outs || {})[ts];
         logger.debug(`node: code ts ${ts} out ts ${outTs}`)
 
-        if(!this.match(cid, text)) return ;
+        if(!this.match(event)) return ;
 
         var cmd = Node.parse(text);
         switch(cmd.type) {

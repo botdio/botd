@@ -19,8 +19,8 @@ class App extends EventEmitter{
         
         this.on('slack', this.onSlack);
     }
-    match(cid, text) {
-        return App.parseCmd(text);
+    match(event) {
+        return App.parseCmd(event.text);
     }
 
     onSlack(event) {

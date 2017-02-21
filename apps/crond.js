@@ -68,8 +68,8 @@ class Cron extends EventEmitter{
             logger.error(`crond: fail to init tasks`, err);
         }
     }
-    match(cid, text) {
-        var tokens = P.tokenize(text);
+    match(event) {
+        var tokens = P.tokenize(event.text);
         if(tokens.length > 0 && tokens[0] === "cron") {
             return true;   
         }

@@ -15,12 +15,12 @@ class Help extends EventEmitter{
         this.db = ctx.db;
         this.on('slack', this.onSlack);
     }
-    match(cid, text) {
-        var tokens = P.tokenize(text);
+    match(event) {
+        var tokens = P.tokenize(event.text);
         if(tokens.length > 0 && (tokens[0] === "help" || tokens[0] === "h")) {
             if(tokens.length > 1)
                 return tokens[1];
-            return "all";   
+            return "all";
         }
     }
     onSlack(event) {

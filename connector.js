@@ -207,7 +207,7 @@ class Connector extends EventEmitter {
         // logger.debug(`connector: slack apps filter by cid ${cid}, apps ${_.map(apps, a => a.constructor.name).join(',')}`);
         _.each(apps, app => {
             try{
-                if(app.match(event.cid, event.text, event.ts)){
+                if(app.match(event)){
                     app.emit('slack', event);
                 }
             }catch(err) {

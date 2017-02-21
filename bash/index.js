@@ -31,9 +31,9 @@ class Bash extends EventEmitter{
         this.db.terminals = this.db.terminals || {};
     }
 
-    match(cid, text, ts) {
-        if(ts && this.db.terminals[ts]) return true;
-        var tokens = P.tokenize(text);
+    match(event) {
+        if(event.ts && this.db.terminals[event.ts]) return true;
+        var tokens = P.tokenize(event.text);
         return _.find(BASH_CMDS, w => w === (tokens[0] || "").toLowerCase());
     }
     onTimer(event) {
@@ -54,7 +54,7 @@ class Bash extends EventEmitter{
         var outTs = (this.db.outs || {})[ts];
         logger.debug(`bash: code ${ts} out ts ${outTs} action ${action}`)
 
-        if(!this.match(cid, text, ts)) return ;
+        if(!this.match(event)) return ;
 
         var output = new Console(this.push.bind(this), outTs);
         if(action === "deleted") {
