@@ -220,11 +220,11 @@ class Connector extends EventEmitter {
         return _.filter(this.apps, e => e.cid === cid);
     }
 
-    push(cid, text, attachmentsOrTs, attachments) {
+    push(cid, text, attachmentsOrTs, attachments, threadTs) {
         return typeof attachmentsOrTs === "string" ?
-         co(this._slack.update(cid, attachmentsOrTs, text, attachments))
+         co(this._slack.update(cid, attachmentsOrTs, text, attachments, threadTs))
          :
-         co(this._slack.send(cid, text, attachmentsOrTs));
+         co(this._slack.send(cid, text, attachmentsOrTs, threadTs));
     }
 
 

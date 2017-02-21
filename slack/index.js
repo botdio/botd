@@ -70,26 +70,32 @@ class SlackBot {
 
               case "message":
                 var channel = msg.channel;
-                // logger.info(`slack: channel ${channel} got message ${JSON.stringify(msg)}`);
+                logger.info(`slack: channel ${channel} got message ${JSON.stringify(msg)}`);
                 if(msg.bot_id) return ; //a bot message, ignore
                 // if(msg.subtype) return ; // special message, ignore
                 if(msg.user && msg.user === "USLACKBOT") return ;
                 var ts = msg.ts;
                 var text = msg.text;
-                var action = "created";
+                var action = CONSTS.MSG_ACTIONS.CREATED;
                 if(msg.subtype && msg.subtype === "message_changed") {
                   ts = msg.message.ts;
                   text = msg.message.text;
-                  action = "updated";
+                  action = CONSTS.MSG_ACTIONS.UPDATED;
                 }
                 else if(msg.subtype && msg.subtype === "message_deleted") {
                   ts = msg.deleted_ts;
-                  action = "deleted";        
+                  action = CONSTS.MSG_ACTIONS.DELETED;
+                }
+                else if(msg.subtype && "message_replied" === msg.subtype) {
+                  action = CONSTS.MSG_TYPE.REPLIED;
+                  logger.debug(`slack: get message replied event ${JSON.stringify(msg)}`);
+                  text = msg.message.text;
+                  ts = msg.message.ts;
                 }
 
                 var processedMsg = this.preHandleMsg(channel, text);
                 this.connector.emit("message", {cid: channel, text: processedMsg.text, 
-                          type: processedMsg.type, ts: ts, action: action});
+                          type: processedMsg.type, ts: ts, action: action, thread_ts: msg.thread_ts});
                 break;
 
               default:
@@ -115,11 +121,11 @@ class SlackBot {
       return {type: CONSTS.MSG_TYPE.KNOWN, text: text};
     }
 
-    *send(channel, text, attachments) {
+    *send(channel, text, attachments, threadTs) {
       if(!text || text.length == 0)
         return ;
       return yield new Promise((resolve, reject) =>{
-        this.bot.postMessage(channel, text, {attachments: attachments})
+        this.bot.postMessage(channel, text, {attachments: attachments, thread_ts: threadTs})
         .then(data => {
           // logger.debug(`slack: send to channel ${channel} done, resp data ${JSON.stringify(data)}`);
           resolve(data);
@@ -130,11 +136,11 @@ class SlackBot {
       });
     }
     
-    *update(channel, ts, text, attachments) {
+    *update(channel, ts, text, attachments, threadTs) {
       if(!text || text.length == 0)
         return ;
       return yield new Promise((resolve, reject) =>{
-        this.bot.updateMessage(channel, ts, text, {attachments: attachments, parse: "none"})
+        this.bot.updateMessage(channel, ts, text, {attachments: attachments, thread_ts: threadTs, parse: "none"})
         .then(data => {
           // logger.debug(`slack: send to channel ${channel} done, resp data ${JSON.stringify(data)}`);
           resolve(data);

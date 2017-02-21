@@ -3,6 +3,12 @@ exports.MSG_TYPE = {
   MENTION: "mention",
   KNOWN: "known"
 }
+exports.MSG_ACTIONS = {
+    CREATED: "created",
+    DELETED: "deleted",   
+    EDITED: "edited",
+    REPLIED: "replied"
+}
 exports.DATA_DIR = process.env.DATA || ".";
 exports.DEFAULT_DB = `file:${exports.DATA_DIR}/db`
 exports.LOG_FILE = `${exports.DATA_DIR}/logs/botd.log`;
