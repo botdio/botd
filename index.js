@@ -6,5 +6,5 @@ exports.Connector = require('./connector');
 exports.Apps = require('./apps').common;
 
 exports.Bash = require('./bash');
-exports.Node = require('./bode');
+exports.Node = require('./node');
 exports.Console = require('./utils/console');
