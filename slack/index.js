@@ -76,18 +76,18 @@ class SlackBot {
                 if(msg.user && msg.user === "USLACKBOT") return ;
                 var ts = msg.ts;
                 var text = msg.text;
-                var action = CONSTS.MSG_ACTIONS.CREATED;
+                var action = CONSTS.MSG_ACTION.CREATED;
                 if(msg.subtype && msg.subtype === "message_changed") {
                   ts = msg.message.ts;
                   text = msg.message.text;
-                  action = CONSTS.MSG_ACTIONS.UPDATED;
+                  action = CONSTS.MSG_ACTION.UPDATED;
                 }
                 else if(msg.subtype && msg.subtype === "message_deleted") {
                   ts = msg.deleted_ts;
-                  action = CONSTS.MSG_ACTIONS.DELETED;
+                  action = CONSTS.MSG_ACTION.DELETED;
                 }
                 else if(msg.subtype && "message_replied" === msg.subtype) {
-                  action = CONSTS.MSG_TYPE.REPLIED;
+                  action = CONSTS.MSG_ACTION.REPLIED;
                   logger.debug(`slack: get message replied event ${JSON.stringify(msg)}`);
                   text = msg.message.text;
                   ts = msg.message.ts;

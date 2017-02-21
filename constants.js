@@ -3,7 +3,7 @@ exports.MSG_TYPE = {
   MENTION: "mention",
   KNOWN: "known"
 }
-exports.MSG_ACTIONS = {
+exports.MSG_ACTION = {
     CREATED: "created",
     DELETED: "deleted",   
     EDITED: "edited",
