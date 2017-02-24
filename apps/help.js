@@ -38,6 +38,7 @@ class Help extends EventEmitter{
     }
 
     printHelp(appName) {
+        appName = appName.toLowerCase();
         var Apps = require('./index');
         var app = _.find(Apps.root, a => a.name.toLowerCase() === appName) || _.find(Apps.common, a => a.name.toLowerCase() === appName);
         if(!app){
