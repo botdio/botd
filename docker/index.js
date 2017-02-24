@@ -8,6 +8,7 @@ var CONST = require('../constants');
 var logger = require('../logger');
 var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
+var spawn = require('child_process').spawn;
 
 const DOCKER_ENTRIES = ["!docker"];
 
@@ -27,7 +28,6 @@ class Docker extends EventEmitter{
         var tokens = P.tokenize(event.text);
         return _.find(Docker.entries(), w => w === (tokens[0] || "").toLowerCase());
     }
-
     onSlack(event) {
         var cid = event.cid;
         var text = event.text;
@@ -37,44 +37,90 @@ class Docker extends EventEmitter{
         if(!this.match(event)) return ;
                 
         var cmd = Docker.parseCmd(text);
+        var name = Docker.containerName(cid);
+        const output = new Console(this.push);
         switch(cmd.type) {
             case "LOAD":
-                this.push(`start to load image ${cmd.image}`);
+                output.log(`_start to load image ${cmd.image} ..._`);
+                this.execDockerProcess(["run","-dit", "--name", name, cmd.image], output);
             break;
             
             case "STOP": {
-                this.push("stopping the channel container");
+                output.log("_current channel container status..._");
+                Docker.bash(`docker ps -a -f name=${name}`, output);
+                output.log("_try to stop ..._");
+                Docker.bash(`docker stop $(docker ps -a -q -f name=${name})`, output);
                 break;
             }
 
             case "START": {
-                this.push("starting the channel container");
+                output.log("current channel container status:");
+                this.bash(`docker ps -a -f name=${name}`, output);
+                output.log("_try to start ..._");
+                Docker.bash(`docker start $(docker ps -a -q -f name=${name})`, output);
                 break;
             }
 
             case "STATUS": {
-                this.push("not load any images");
+                Docker.bash(`docker ps -a -f name=${name}`, output);
                 break;
             }
         }
     }
+
+    execDockerProcess(params, output) {
+        var that = this;
+        var docker = spawn('docker', params);
+        docker.stdout.on('data', function (data) {
+            output.log(data);
+        });
+        docker.stderr.on('data', function (data) {
+            output.error(data);
+        });
+        docker.on('close', (code) => {
+          console.log(`docker run done (${code}).`);
+        });
+    }
+
+}
+
+Docker.containerName = function(cid) {
+    return `docker-${cid}`;
+}
+Docker.bash = function(script, output) {
+    logger.info(`docker: start to run script ${script}`);
+    return new Promise((r, j) => {
+        const prc = spawn('bash', [ '-c', script]);
+        prc.stdout.on('data', function (data) {
+            output.log(data);
+        });
+        prc.stderr.on('data', function (data) {
+            output.error(data);
+        });
+        prc.on('exit', (code) =>{
+            code === 0 ? r(code) : j(code);
+        })
+    });
+}
+Docker.stopAndRm = function(cid) {
+    Docker.bash(`docker rm $(docker stop $(docker ps -a -q -f name=${Docker.containerName(cid)}))`, console); 
 }
 var APP_PATTERNS = [
     {
         type: "LOAD",
-        patterns: [/^!docker\s+load\s+(\w+)/i, /^!docker\s+l\s+(\w+)/i]
+        patterns: [/^!docker\s+load\s+([\w|\/|\:]+)/i, /^!docker\s+l\s+([\w|\/|\:]+)/i]
     },
     {
         type: "STOP",
-        patterns: [/^!docker\s+stop\s/i]
+        patterns: [/^!docker\s+stop/i]
     },
     {
         type: "START",
-        patterns: [/^!docker\s+start\s/i]
+        patterns: [/^!docker\s+start/i]
     },
     {
         type: "STATUS",
-        patterns: [/^!docker\s/i]
+        patterns: [/^!docker/i]
     }
 ]
 Docker.parseCmd = function(text) {

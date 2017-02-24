@@ -31,7 +31,7 @@ function checkUsage(token) {
 }
 
 var slack = new SlackBot(program.token, program.name);
-var connector = new Connector(slack);
+var connector = new Connector(slack, program.mode);
 slack.connect(connector);
 slack.startBot();
 

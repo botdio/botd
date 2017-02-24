@@ -15,12 +15,13 @@ var ChannelDb = DB.indexOf("mongodb:") === 0 ? require('./db/channel') : require
 
 // connect the bot with slack
 class Connector extends EventEmitter {
-    constructor(slack) {
+    constructor(slack, mode) {
         super();
         this._slack = slack;
         this.tid = "";
         this.apps = [];
         this.channels = [];
+        this.isRunDocker = (mode === "docker");
 
         this.on('start', this.onStart);
         this.on('error', this.onError);
@@ -176,7 +177,11 @@ class Connector extends EventEmitter {
         var cid = event.channel.id;
         co(this.joinChannel(cid, this.tid)).then(() => {
             logger.info(`connector: channel ${cid} join done`);
-            this.push(cid, new SlackBuilder(`OK, channel join done, press \`help\` to start!`).i().build());            
+            var startMsg = new SlackBuilder(`OK, channel join done, press \`help\` to start!`).i();
+            if(this.isRunDocker) {
+                startMsg.br().text(`*Notice:* need setup the channel docker by \`!docker load <image-name>\` to start run script`);
+            }
+            this.push(cid, startMsg.build()); 
         }).catch(err => {
             logger.info(`connector: channel ${cid} join fail`, err);
             this.push(cid, new SlackBuilder(`ERROR: fail to init channel`).i().br().text(err.toString()).build());            
@@ -193,6 +198,12 @@ class Connector extends EventEmitter {
         this.apps = _.filter(this.apps, a => a.cid !== cid);
         co(ChannelDb.deleteDb(cid)).catch(err => logger.error(`connector: fail to delete channel ${cid} db`, err))
         this.channels = _.filter(this.channels, c => c.cid !== cid);
+        if(this.isRunDocker) {
+            //rm the docker
+            var Docker = require('./docker');
+            Docker.stopAndRm(cid);
+            logger.info(`connector: stop and rm docker container`);
+        }
     }
     onMsg(event) {
         logger.info(`connector: recv message event`, event.cid, event.ts, event.action);

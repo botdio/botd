@@ -1,7 +1,7 @@
 var expect = require('chai').expect;
 var should = require('chai').should;
 var assert = require('chai').assert;
-var codeRun = require('../shell/run_script');
+var codeRun = require('../node/run_script');
 
 describe('runner', function() {
   it('should run ok for normal code', function(done) {
