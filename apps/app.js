@@ -99,15 +99,15 @@ class App extends EventEmitter{
 var APP_PATTERNS = [
     {
         type: "INSTALL",
-        patterns: [/^app\s+install\s+(\w+)/i, /^app\s+i\s+(\w+)/i]
+        patterns: [/^!app\s+install\s+(\w+)/i, /^!app\s+i\s+(\w+)/i]
     },
     {
         type: "REMOVE",
-        patterns: [/^app\s+uninstall\s+(\w+)/i, /^app\s+remove\s+(\w+)/i, /^app\s+ui\s+(\w+)/i]
+        patterns: [/^!app\s+uninstall\s+(\w+)/i, /^!app\s+remove\s+(\w+)/i, /^!app\s+ui\s+(\w+)/i]
     },
     {
         type: "PRINT",
-        patterns: [/^app/i, /^app\s+install/i, /^app\s+i/i]
+        patterns: [/^!app/i, /^!app\s+install/i, /^!app\s+i/i]
     }
 ]
 App.parseCmd = function(text) {
@@ -125,9 +125,9 @@ App.parseCmd = function(text) {
 }
 App.help = function() {
     return `_*App* : install or remove apps_
-        _\`app\` - list installed apps for this channel_
-        _\`app install\` or \`app i\` - install an app_
-        _\`app uninstall \` - remove an app_
+        _\`!app\` - list installed apps for this channel_
+        _\`!app install\` or \`app i\` - install an app_
+        _\`!app uninstall \` - remove an app_
         `;
 }
 module.exports = App;

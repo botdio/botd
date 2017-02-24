@@ -3,6 +3,7 @@
 exports.logger = require('./logger');
 exports.SlackBot = require('./slack');
 exports.Connector = require('./connector');
+exports.Docker = require('docker');
 exports.Apps = require('./apps').common;
 
 exports.Bash = require('./bash');
