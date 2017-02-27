@@ -2,6 +2,7 @@
 var _ = require('lodash');
 var EventEmitter = require('events');
 var co = require('co');
+var fs = require('fs');
 
 var Console = require('../utils/console');
 var CONST = require('../constants');
@@ -9,13 +10,19 @@ var logger = require('../logger');
 var SlackBuilder = require('slack_builder');
 var P = require('../utils/patterns');
 var spawn = require("child_process").spawn;
+var DockerUtils = require("../utils/docker_utils")
 
 const BASH_SUB_TYPE = {
     RUN: "RUN",
     INFO: "INFO"
 }
 
-const BASH_CMDS = ["!bash"];
+const CMD_PATTERNS = [
+        {cmd: "!bash", exec: "bash"},
+        {cmd: "!sh", exec: "sh"},
+        {cmd: "!python", exec: "python"},
+        {cmd: "!ruby", exec: "ruby"}
+    ];
 
 class Bash extends EventEmitter{
     constructor(ctx) {
@@ -26,6 +33,7 @@ class Bash extends EventEmitter{
         this.push = ctx.push;
         
         this.on('slack', this.onSlack);
+        this.on('docker', this.onDocker);
         this.on('timer', this.onTimer);
 
         this.db.terminals = this.db.terminals || {};
@@ -34,7 +42,7 @@ class Bash extends EventEmitter{
     match(event) {
         if(event.ts && this.db.terminals[event.ts]) return true;
         var tokens = P.tokenize(event.text);
-        return _.find(BASH_CMDS, w => w === (tokens[0] || "").toLowerCase());
+        return _.find(CMD_PATTERNS, o => o.cmd === (tokens[0] || ""));
     }
     onTimer(event) {
         var cmd = event.cmd;
@@ -44,6 +52,12 @@ class Bash extends EventEmitter{
         if(verbose)
             this.push(new SlackBuilder(`start to run the cron job `).b(jobid).i().build());
         this.onSlack({cid: this.cid, text: cmd});
+    }
+    onDocker(event) {
+        if(event.type === "loaded" && event.cid === this.cid) {
+            this.container = event.containerId;
+            logger.debug(`bash: get container loaded event ${this.container}`);
+        }
     }
 
     onSlack(event) {
@@ -84,7 +98,16 @@ class Bash extends EventEmitter{
             case BASH_SUB_TYPE.RUN:
                 try{
                     var code = P.fmt(cmd.code);
-                    this.execRunProcess(ts, code, output);
+                    if(this.container) {
+                        logger.debug(`bash: start to run code in container`);
+                        co(this.execRunDocker(cmd.exec, ts, code, output)).then(()=>{
+                            logger.info(`bash: run the code in docker done`);
+                        }).catch(err => {
+                            logger.error(`bash: fail to run the code in docker`, err);
+                        });
+                    }else{
+                        this.execRunProcess(cmd.exec, ts, code, output);                        
+                    }
                 }catch(err) {
                     output.error(err).then(() => {
                         this.attachTs(ts, output.ts);
@@ -101,9 +124,47 @@ class Bash extends EventEmitter{
             }
         }
     }
-    execRunProcess(ts, code, output) {
+    *execRunDocker(exec, ts, code, output) {
+        // make the code into a file
+        var filename = `${ts}`;
+        fs.writeFileSync(filename, code);
+        fs.chmodSync(filename, "700");
+        logger.debug(`bash: write the code to file ${filename} and make executable done`);
+
+        // cp the file into container
+        yield DockerUtils.cp(`./${filename}`, `${this.container}:./`);
+        logger.debug(`bash: cp the code file to docker container ${this.container} done`);
+
+        // run the file
         var that = this;
-        var terminal = require('child_process').spawn('bash');
+        var terminal = spawn('docker', ['exec', this.container, exec, `./${filename}`]);
+        terminal.stdout.on('data', function (data) {
+            output.log(data).then(() => that.attachTs(ts, output.ts));
+        });
+        terminal.stderr.on('data', function (data) {
+            output.error(data).then(() => that.attachTs(ts, output.ts));;
+        });
+        var terminals = this.db.terminals;
+        terminal.on('exit', function (exitCode) {
+            if(exitCode !== 0)
+                output.log(`_\`bash exit abnormal(${exitCode})\`_`).then(() => that.attachTs(ts, output.ts));
+            if(terminals[ts] && terminals[ts].pid === terminal.pid) {
+                delete terminals[ts];
+                that.save();
+            }
+        });
+
+        terminals[ts] = {pid: terminal.pid, cmd: code};
+        this.save();
+        logger.debug(`bash: ts ${ts} attached to terminal ${terminal.pid}`);
+        // terminal.stdin.write(code);
+        // terminal.stdin.end();
+        return terminal;
+    }
+
+    execRunProcess(exec, ts, code, output) {
+        var that = this;
+        var terminal = spawn(exec);
         terminal.stdout.on('data', function (data) {
             output.log(data).then(() => that.attachTs(ts, output.ts));
         });
@@ -141,11 +202,11 @@ class Bash extends EventEmitter{
 
 Bash.parse = function(text) {
     var tokens = P.tokenize(text);
-    var cmd = _.find(BASH_CMDS, s => s === tokens[0])
+    var cmd = _.find(CMD_PATTERNS, o => o.cmd === tokens[0].toLowerCase())
     if(cmd) {
-        text = text.substring(text.indexOf(cmd) + cmd.length);
+        text = text.substring(text.indexOf(cmd.cmd) + cmd.cmd.length);
         var code = (P.code(text || "") || "").trim();
-        if(code) return {type: BASH_SUB_TYPE.RUN, code: code};
+        if(code) return {type: BASH_SUB_TYPE.RUN, code: code, exec: cmd.exec};
         else return {type: BASH_SUB_TYPE.INFO};
     }
 }

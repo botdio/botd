@@ -19,6 +19,7 @@ class Docker extends EventEmitter{
         this.db = ctx.db;
         this.save = ctx.save;
         this.push = ctx.push;
+        this.connector = ctx.connector;
         
         this.on('slack', this.onSlack);
         this.container = undefined;
@@ -55,9 +56,12 @@ class Docker extends EventEmitter{
 
             case "START": {
                 output.log("current channel container status:");
-                this.bash(`docker ps -a -f name=${name}`, output);
+                Docker.bash(`docker ps -a -f name=${name}`, output);
                 output.log("_try to start ..._");
-                Docker.bash(`docker start $(docker ps -a -q -f name=${name})`, output);
+                Docker.bash(`docker start $(docker ps -a -q -f name=${name})`, output)
+                .then(() => {
+                    this.checkAndBroadcast();
+                });
                 break;
             }
 
@@ -78,10 +82,17 @@ class Docker extends EventEmitter{
             output.error(data);
         });
         docker.on('close', (code) => {
-          console.log(`docker run done (${code}).`);
+          logger.debug(`docker: docker process done (${code}).`);
+          this.checkAndBroadcast();
         });
     }
-
+    checkAndBroadcast() {
+        Docker.fetchContainerId(this.cid).then(containerId => {
+            this.connector.notifyAppEvent("docker", {cid: this.cid, type:"loaded", containerId: containerId});
+        }).catch(err => {
+            logger.error(`docker: fail to get the docker id`, err);
+        });
+    }
 }
 
 Docker.containerName = function(cid) {
@@ -104,6 +115,34 @@ Docker.bash = function(script, output) {
 }
 Docker.stopAndRm = function(cid) {
     Docker.bash(`docker rm $(docker stop $(docker ps -a -q -f name=${Docker.containerName(cid)}))`, console); 
+}
+class Out {
+    constructor(){
+        this.info = "";
+        this.err = "";
+    }
+    log(d){
+        this.info += d;
+    }
+    error(err) {
+        this.err += err;
+    }
+}
+Docker.fetchContainerId = function(cid) {
+    var out = new Out();
+    var script = `docker ps -a -q -f name=${Docker.containerName(cid)}`;
+    return new Promise((resolve, reject) => {
+        Docker.bash(script, out)
+        .then(code => {
+            if(out.info) {
+                resolve(out.info.trim());
+            }else if(out.err){
+                reject(out.err);
+            }
+        }).catch(code => {
+            logger.error(`fail to run bash script ${script}, exit code ${code}`);
+        });        
+    });
 }
 var APP_PATTERNS = [
     {

@@ -206,7 +206,7 @@ class Connector extends EventEmitter {
         }
     }
     onMsg(event) {
-        logger.info(`connector: recv message event`, event.cid, event.ts, event.action);
+        // logger.info(`connector: recv message event`, event.cid, event.ts, event.action);
         try{
             this.exec(event);            
         }catch(err) {
