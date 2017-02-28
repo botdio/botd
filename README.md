@@ -4,16 +4,16 @@
 BotD is a server side code playground. When start, it will listen the Slack message and executed the scripts.
 
 ## Key Features:
-> Connect the stdio/stderr into slack message;  
-> Edit code, save then run again.
-> Connect the docker container to channel.
-> Cron jobs support for easy automation.
+> Connect the stdio/stderr into slack message;    
+> Edit code, save then run again;  
+> Connect the docker container to channel;  
+> Cron jobs support for easy automation.  
 
-## Suggested to be used to:
-> Team code pen or playground, to show the runnable and workable code to your team;  
-> Server operation without SSH but in Slack.
+## Scenario:
+> Team code pen or playground, to show the runnable and workable code;  
+> Server operation without SSH but in Slack, more easy in mobile.
 > Hire talent by peer coding in slack guest channel.
-> Test and deploy the docker images
+> Test the docker images
 
 ## Demo: Hello, World
 The follow gif shows how to invite BotD, write and execute the code, change and rerun the code:
@@ -41,15 +41,14 @@ Your bot should be shown in your slack im list!
 ## FAQ
 
 ### How to run code?
-Format: `!<app> <code>`  
+Format: `!<app> <code>`, where
 1. _app_ should be knowable, use `!help` to find avaliable apps.
-2. _code_ should be wrapped by \` (for one line code), or by ``` (for multiple line codes).
-
+2. _code_ should be wrapped by \` (for one line code), or by ``` (for multiple line codes).  
 e.g. 
 ```
 !py `print 'hello,world'`
 ```
-Then BotD bot will be raised to start a python process, and run code `print 'hello,world'`. If the channel container is attached, the python process will run in the containter.  
+Then BotD bot will start a python process, and run code `print 'hello,world'`. If the channel container is attached, the python process will run in the containter.  
 Also the code part can be multiple lines, e.g.
 ```
 !bash
@@ -57,28 +56,36 @@ Also the code part can be multiple lines, e.g.
     date;
     sleep 1;
     done
- ```
+  ```
 ```
 
-### How to contact the docker into channel
-Use `!docker run <docker-image>` to start a container, then it will be attached to this channel;  
-Or use `!docker attach <existed-container-id>` to attach the existed container into this channel;  
-Then all the script will be run in it.  
-Later use `!docker start/stop` to mange the container;  
-Or use `!docker detach` to detach the container.  
-NOTICE: the attach/detach is no related to docker attach/detach.  
+**NOTICE** : if you want to interupt a script, you can kill it by two methods:
+1. `!bash kill <pid>` -- find pid by `!bash ps`
+2. Directly delete the command message in slack, then BotD will find the attached process and kill it.
 
+### How to manage the channel containter
+1. Attach  
+> Use `!docker run <docker-image>` to start a container, then it will be attached to this channel;  
+> Or use `!docker attach <existed-container-id>` to attach the existed container into this channel;  
+Then all the script will be run in it.  
+2. Start/Stop  
+> Use `!docker start/stop` to mange the container;  
+3. Detach  
+> Use `!docker detach` to detach the container.  
+
+**NOTICE** : the attach/detach is no related to docker attach/detach.  
 Use `!help docker` to find more.
 
 ### How to use cron job
 BotD support Crond - a time-based job scheduler, like *nix.  
 E.g. the following command will run counter adding for each minute, and output the value to your slack.
 ```
-cron add "* * * * ? *" !node ` console.log(new Date()) `
+cron add "* * * * ? *" !node `console.log(new Date()) `
 ```
 
 ### What is the script runtime?
-If you attach the slack channel into a docker container, the script will be run in it; else, it will run in the native environment.
+If you attach the slack channel into a docker container, the script will be run in it.
+If not, it will run in the native environment.
 
 ### Without Docker, can run it?
 Yes, then all channels will share the same runtime environment (your server).
@@ -110,4 +117,6 @@ DB=mongodb://localhost/botd node ./botd.js -t  <slack bot token>
 ```
 
 ## Support
-Welcome to fire issues in github, or send more support to hhhust@gmail.com 
+Welcome to fire issues in github, send pull request.
+And I am not native English speaker, this document should be fixed very much, feel free to send pull request.
+Or if you need bussiness support, please send to hhhust@gmail.com 
