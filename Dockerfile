@@ -1,4 +1,4 @@
-FROM node:4
+FROM docker
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 ENV appDir /var/botd/current
 ENV NVM_DIR /usr/local/nvm

@@ -13,8 +13,8 @@ describe('Docker', function() {
     expect(Docker.parseCmd("!docker start").type).to.be.eql("START");
   });
 
-  it("should ps container", (done) => {
-    Docker.ps().then(containers => {console.log(containers);done()});
-  })
+  // it("should ps container", (done) => {
+  //   Docker.ps().then(containers => {console.log(containers);done()});
+  // })
 
 });
