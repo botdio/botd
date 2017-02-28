@@ -17,7 +17,7 @@ if(program.mode && program.mode === "docker"){
     var Apps = require('./apps').root;  
     var Docker = require('./docker');  
     if(!_.find(Apps, a => a.name === Docker.name)){
-        Apps.push(Docker);
+        Apps.unshift(Docker);
         console.log(`mode set as ${program.mode}, load App Docker done`);
     }
 }else{

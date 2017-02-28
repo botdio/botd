@@ -174,12 +174,12 @@ class Connector extends EventEmitter {
     }
     onJoin(event) {
         logger.info(`connector: recv join event`, JSON.stringify(event));
-        var cid = event.channel.id;
+        var cid = event.channel.id || event.channel;
         co(this.joinChannel(cid, this.tid)).then(() => {
             logger.info(`connector: channel ${cid} join done`);
-            var startMsg = new SlackBuilder(`OK, channel join done, press \`help\` to start!`).i();
+            var startMsg = new SlackBuilder(`OK, channel join done, press \`!help\` to start!`).i();
             if(this.isRunDocker) {
-                startMsg.br().text(`*Notice:* need setup the channel docker by \`!docker load <image-name>\` to start run script`);
+                startMsg.br().text(`_*NOTICE:* use \`!docker run <image-name>\` or \`!docker attach <existed-container-id>\` to run/attach the container to this channel, then the scripts will run in it. For now, script will be run in your hosted server. _`);
             }
             this.push(cid, startMsg.build()); 
         }).catch(err => {

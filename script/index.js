@@ -21,7 +21,9 @@ const SCRIPT_PATTERNS = [
         {cmd: "!bash", exec: "bash"},
         {cmd: "!sh", exec: "sh"},
         {cmd: "!python", exec: "python"},
+        {cmd: "!py", exec: "python"},
         {cmd: "!ruby", exec: "ruby"},
+        {cmd: "!rb", exec: "ruby"},
         {cmd: "!node", exec: "node"},
         {cmd: "!js", exec: "node"},
         {cmd: /!(\..*)/},
@@ -154,7 +156,7 @@ class Script extends EventEmitter{
         var terminals = this.db.terminals;
         terminal.on('exit', function (exitCode) {
             if(exitCode !== 0)
-                output.log(`_\`script exit abnormal(code: ${exitCode})\`_`).then(() => that.attachTs(ts, output.ts));
+                output.log(`_\`script executed abnormal, exit ${exitCode}\`_`).then(() => that.attachTs(ts, output.ts));
             if(terminals[ts] && terminals[ts].pid === terminal.pid) {
                 delete terminals[ts];
                 that.save();
@@ -175,10 +177,13 @@ class Script extends EventEmitter{
         terminal.stdout.on('data', function (data) {
             output.log(data).then(() => that.attachTs(ts, output.ts));
         });
+        terminal.stderr.on('data', function (data) {
+            output.error(data).then(() => that.attachTs(ts, output.ts));;
+        });
         var terminals = this.db.terminals;
         terminal.on('exit', function (exitCode) {
             if(exitCode !== 0)
-                output.log('_`script exit abnormal (code: ${exitCode})`_').then(() => that.attachTs(ts, output.ts));
+                output.log(`_\`script executed abnormal, exit ${exitCode}\`_`).then(() => that.attachTs(ts, output.ts));
             if(terminals[ts] && terminals[ts].pid === terminal.pid) {
                 delete terminals[ts];
                 that.save();
@@ -209,6 +214,7 @@ class Script extends EventEmitter{
 
 Script.parse = function(text) {
     var tokens = P.tokenize(text);
+    if(!tokens || !tokens[0]) return ;
     var found = _.find(SCRIPT_PATTERNS, o => typeof o.cmd === "string" 
                     ? (o.cmd === tokens[0].toLowerCase())
                     : tokens[0].match(o.cmd))
@@ -225,7 +231,13 @@ Script.parse = function(text) {
 Script.help = function(verbose) {
     var sb = new SlackBuilder();
     sb.b(`Script`).text(` - write, edit and run script (bash, node, ruby, python etc)`).i().br();
-    sb.text("\t_`!bash <code> `").text(" - run bash shell <code> _").br();
+    _.each(SCRIPT_PATTERNS, p => {
+        sb.text(`\t_\`${p.cmd} <code> \``).text(` - run <code> in ${p.exec || "<custom executer>"}_`).br();
+    });
+    sb.br().text("_e.g._\n```!bash `echo hello,world` ```").br();
+    sb.text("```!python `print 'hello,world'` ```").br();
+    sb.text("```!ruby `print 'hello,world'` ```").br();
+    sb.text("```!node `console.log('hello,world')` ```").br();
     return sb.build();
 }
 

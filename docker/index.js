@@ -217,7 +217,7 @@ Docker.entries = function() {
 }
 Docker.help = function(verbose) {
     var sb = new SlackBuilder();
-    sb.b(`Docker`).text(` - mange the channel docker container`).i().br();
+    sb.b(`Docker`).text(` - attach docker to  channel then run script in it`).i().br();
     sb.text("\t_`!docker run <image>`").text(" - load an image into channel and run _").br();
     sb.text("\t_`!docker attach <container id>`").text(" - attach an existed channel to this channel _").br();
     sb.text("\t_`!docker detach`").text(" - detach the attached container from this channel _").br();

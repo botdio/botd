@@ -48,6 +48,10 @@ class SlackBot {
             logger.error(`slack: bot start error`, err);
             this.connector.emit("error", {err: err});
         });
+        this.bot.on('im_open', (msg) => {
+          logger.debug(`slack: im open msg`, msg);
+          this.connector.emit("join", msg);
+        });
         this.bot.on('message', (msg) => {
           if(!msg) return ;
             // all ingoing events https://api.slack.com/rtm
