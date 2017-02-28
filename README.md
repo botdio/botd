@@ -11,8 +11,8 @@ BotD is a server side code playground. When start, it will listen the Slack mess
 
 ## Scenario:
 > Team code pen or playground, to show the runnable and workable code;  
-> Server operation without SSH but in Slack, more easy in mobile.
-> Hire talent by peer coding in slack guest channel.
+> Server operation without SSH but in Slack, more easy in mobile.  
+> Hire talent by peer coding in slack guest channel.  
 > Test the docker images
 
 ## Demo: Hello, World
@@ -41,8 +41,8 @@ Your bot should be shown in your slack im list!
 ## FAQ
 
 ### How to run code?
-Format: `!<app> <code>`, where
-1. _app_ should be knowable, use `!help` to find avaliable apps.
+Format: `!<app> <code>`, where  
+1. _app_ should be knowable, use `!help` to find avaliable apps.  
 2. _code_ should be wrapped by \` (for one line code), or by ``` (for multiple line codes).  
 e.g. 
 ```
@@ -55,8 +55,7 @@ Also the code part can be multiple lines, e.g.
  ```while(true);do
     date;
     sleep 1;
-    done
-  ```
+    done```
 ```
 
 **NOTICE** : if you want to interupt a script, you can kill it by two methods:
