@@ -6,8 +6,6 @@ exports.Connector = require('./connector');
 exports.Docker = require('docker');
 exports.Apps = require('./apps').common;
 
-exports.Bash = require('./bash');
-exports.Node = require('./node');
 exports.Console = require('./utils/console');
 
 exports.MSG_ACTION = require('./constants').MSG_ACTION;

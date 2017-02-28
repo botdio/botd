@@ -37,9 +37,13 @@ class SlackBot {
             });
             // logger.debug(`slack: collect ims`, JSON.stringify(this.bot.ims));
             _.each(this.bot.ims, im => {
-              if(im.latest)
-                channels.push({cid: im.id, type:"im"});
+              if(im.is_user_deleted) return;
+              if(!im.is_open) return ;
+              if(!im.user || im.user.indexOf("USLACKBOT") === 0) return ; // bot
+              logger.debug(`slack: im channel added`, im);
+              channels.push({cid: im.id, type:"im"});
             });
+
             this.connector.emit("start", {joined: channels,
               bot: {id: this.bot.self.id, name: this.bot.self.name}, 
               team: {id: this.bot.team.id}});
