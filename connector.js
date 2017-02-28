@@ -198,12 +198,6 @@ class Connector extends EventEmitter {
         this.apps = _.filter(this.apps, a => a.cid !== cid);
         co(ChannelDb.deleteDb(cid)).catch(err => logger.error(`connector: fail to delete channel ${cid} db`, err))
         this.channels = _.filter(this.channels, c => c.cid !== cid);
-        if(this.isRunDocker) {
-            //rm the docker
-            var Docker = require('./docker');
-            Docker.stopAndRm(cid);
-            logger.info(`connector: stop and rm docker container`);
-        }
     }
     onMsg(event) {
         // logger.info(`connector: recv message event`, event.cid, event.ts, event.action);

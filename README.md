@@ -1,16 +1,19 @@
-# BotD - Dev, Daemon and Automation, All in Slack.
+# BotD - Connect the docker and slack, then run code in slack.
 [![Build Status](https://travis-ci.org/botdio/botd.svg?branch=master)](https://travis-ci.org/botdio/botd)
 
-BotD start a daemon process in server side, and connect to your Slack. When code submit, the process will run it and output will be piped to your slack.
+BotD is a server side code playground. When start, it will listen the Slack message and executed the scripts.
 
-Write, run and debug nodejs code, when good enough, make a cron job to do automation. **The whole process is in slack.**
+## Key Features:
+> Connect the stdio/stderr into slack message;  
+> Edit code, save then run again.
+> Connect the docker container to channel.
+> Cron jobs support for easy automation.
 
-BotD can be used to:
-> Show team the runnable code, not words;    
-> Share team the code and results;  
-> "Codepen" for Team;  
-> Operate in server side;  
-> Hire talent by coding in slack.  
+## Suggested to be used to:
+> Team code pen or playground, to show the runnable and workable code to your team;  
+> Server operation without SSH but in Slack.
+> Hire talent by peer coding in slack guest channel.
+> Test and deploy the docker images
 
 ## Demo: Hello, World
 The follow gif shows how to invite BotD, write and execute the code, change and rerun the code:
@@ -18,21 +21,13 @@ The follow gif shows how to invite BotD, write and execute the code, change and 
 
 ## Start 
 ```
+mkdir ./db && mkdir ./logs;
 node ./botd.js -t  <slack bot token> -n <bot name, optional>
 ```
 
 ## API
-First, git clone botd or `npm install botd`.
-
-Second (optional), configure packages/libs for Shell script runtime:
-```
-var Shell = require('botd').Shell;
-Shell.addLibs("request", "superagent"); // install superagent in your project
-Shell.addLibs("format", `${__dirname}/libs/format`); // `format` is your my own lib
-// then in your shell script, format and request are imported.
-```
-
-Third, start bot:
+1. git clone botd or `npm install --save botd`.
+2. start bot:
 ```
 var SlackBot = require('botd').SlackBot;
 var Connector = require('botd').Connector;
@@ -43,28 +38,68 @@ slack.startBot();
 
 Your bot should be shown in your slack im list!
 
-**Find FAQ in [FAQ](./FAQ.md)**
+## FAQ
 
-## Security Issues
-As default, the running scripts are given secure enough packages (co, lodash etc).  
-Maybe you have added "dangerous" package( e.g. fs, child_process - crazy `rm -fr /` :(, even network), here are some suggestions:
-> start botd running as a limited user (no root please).  
-> use cgroup to limit the cpu privilege lower.  
+### How to run code?
+Format: `!<app> <code>`  
+1. _app_ should be knowable, use `!help` to find avaliable apps.
+2. _code_ should be wrapped by \` (for one line code), or by ``` (for multiple line codes).
 
-**YOU NEED UNDERSTAND WHAT ARE YOU DOING WHEN HOST BOTD IN YOUR PRODCUTION SERVER!**
+e.g. 
+```
+!py `print 'hello,world'`
+```
+Then BotD bot will be raised to start a python process, and run code `print 'hello,world'`. If the channel container is attached, the python process will run in the containter.  
+Also the code part can be multiple lines, e.g.
+```
+!bash
+ ```while(true);do
+    date;
+    sleep 1;
+    done
+ ```
+```
+
+### How to contact the docker into channel
+Use `!docker run <docker-image>` to start a container, then it will be attached to this channel;  
+Or use `!docker attach <existed-container-id>` to attach the existed container into this channel;  
+Then all the script will be run in it.  
+Later use `!docker start/stop` to mange the container;  
+Or use `!docker detach` to detach the container.  
+NOTICE: the attach/detach is no related to docker attach/detach.  
+
+Use `!help docker` to find more.
+
+### How to use cron job
+BotD support Crond - a time-based job scheduler, like *nix.  
+E.g. the following command will run counter adding for each minute, and output the value to your slack.
+```
+cron add "* * * * ? *" !node ` console.log(new Date()) `
+```
+
+### What is the script runtime?
+If you attach the slack channel into a docker container, the script will be run in it; else, it will run in the native environment.
+
+### Without Docker, can run it?
+Yes, then all channels will share the same runtime environment (your server).
+
+### More languages support?
+For now, built in support: shell/python/ruby/nodejs.
+You can use `!/path/to/lang/executable <code>` for your code language. e.g. `!/bin/r <r code>` to run r code.
 
 ## Storage
-For now, BotD support two storage types: file(default) and mongodb(optional).
+Bot need store the bot state data into _db_ , along with logs files.
+DB support two types: file(default) and mongodb(optional).
 
 ### stored by file
-Default, use current dir where generate two json file (./channels.json & ./apps.json) as db file:
+Defaultly, use current dir as data dir:
 ```
-node ./botd.js -t <bot token> -name <bot name>
+node ./botd.js -t <bot token> -n <bot name>
 ```
 
-Use specified dir and generate json file: /path/to/dir/channels.json and /path/to/dir/apps.json:
+Or use specified dir: (make sure ${DATA} dir have _db_ and _logs_ sub folder):
 ```
-DB=file:/path/to/dir node ./botd.js -t <bot token> -name <bot name>
+DATA=file:/path/to/dir node ./botd.js -t <bot token> -n <bot name>
 ```
 Make sure the dir exist and writable.
 
@@ -73,19 +108,6 @@ Set the process env DB and start it:
 ```
 DB=mongodb://localhost/botd node ./botd.js -t  <slack bot token>
 ```
-> SaaS use mongodb to store your data.
 
-### Samples
-For app development, you can find a sample project [Hacker News Bot](https://github.com/botdio/hnbot),
-There are several apps:
-> **Follow** - to follow Hacker News keyword, items or users, make HN like a twitter.  
-> **Checker** - check if a link is submitted in HN automatically.  
-> **Agent** - after bind a HN id, get notification when someone comment/upvote my HN items, or when someone reply my comments.
-
-For shell scripts, you can find example gist in https://gist.github.com/datalet/public
-
-### FAQ
-Find FAQ [here](./FAQ.md).
-
-## Contact
-Welcome to fire issues in github, or send pull request, or use [SaaS](https://botd.io) to make life easy.
+## Support
+Welcome to fire issues in github, or send more support to hhhust@gmail.com 

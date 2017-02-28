@@ -5,7 +5,6 @@ program
     .version(require('./package.json').version)
     .option('-t, --token <token>', 'specify the token', '')
     .option('-n, --name <name>', 'specify the bot running name', '')
-    .option('-m, --mode <native|docker>', 'specify the script runtime mode, docker or native[default]')
     .parse(process.argv);
 checkUsage(program.token, program.name);
 
@@ -31,7 +30,7 @@ function checkUsage(token) {
 }
 
 var slack = new SlackBot(program.token, program.name);
-var connector = new Connector(slack, program.mode);
+var connector = new Connector(slack, "docker");
 slack.connect(connector);
 slack.startBot();
 
