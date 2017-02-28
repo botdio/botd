@@ -7,10 +7,14 @@ var Docker = require('../docker');
 
 describe('Docker', function() {
   it("should parse docker cmd well", () =>{
-    expect(Docker.parseCmd("!docker")).to.be.eql({type: "STATUS", image: undefined});
-    expect(Docker.parseCmd("!docker l huan9huan/test")).to.be.eql({type: "LOAD", image: "huan9huan/test"});
-    expect(Docker.parseCmd("!docker load ubuntu:1")).to.be.eql({type: "LOAD", image: "ubuntu:1"});
-    expect(Docker.parseCmd("!docker start")).to.be.eql({type: "START", image: undefined});
+    expect(Docker.parseCmd("!docker").type).to.be.eql("STATUS");
+    expect(Docker.parseCmd("!docker run huan9huan/test").type).to.be.eql("RUN");
+    expect(Docker.parseCmd("!docker run ubuntu:1").type).to.be.eql("RUN");
+    expect(Docker.parseCmd("!docker start").type).to.be.eql("START");
   });
+
+  it("should ps container", (done) => {
+    Docker.ps().then(containers => {console.log(containers);done()});
+  })
 
 });
