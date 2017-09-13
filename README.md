@@ -63,13 +63,18 @@ Also the code part can be multiple lines, e.g.
 2. Directly delete the command message in slack, then BotD will find the attached process and kill it.
 
 ### How to manage the channel containter
-1. Attach  
+1. Attach
+
 > Use `!docker run <docker-image>` to start a container, then it will be attached to this channel;  
 > Or use `!docker attach <existed-container-id>` to attach the existed container into this channel;  
 Then all the script will be run in it.  
+
 2. Start/Stop  
+
 > Use `!docker start/stop` to mange the container;  
+
 3. Detach  
+
 > Use `!docker detach` to detach the container.  
 
 **NOTICE** : the attach/detach is no related to docker attach/detach.  
@@ -77,7 +82,7 @@ Use `!help docker` to find more.
 
 ### How to use cron job
 BotD support Crond - a time-based job scheduler, like *nix.  
-E.g. the following command will run counter adding for each minute, and output the value to your slack.
+e.g. the following command will run counter adding for each minute, and output the value to your slack.
 ```
 cron add "* * * * ? *" !node `console.log(new Date()) `
 ```
@@ -116,6 +121,6 @@ DB=mongodb://localhost/botd node ./botd.js -t  <slack bot token>
 ```
 
 ## Support
-Welcome to fire issues in github, send pull request.
-And I am not native English speaker, this document should be fixed very much, feel free to send pull request.
+Welcome to fire issues in github, send pull request.  
+And I am not native English speaker, this document should be fixed very much, feel free to send pull request.  
 Or if you need bussiness support, please send to hhhust@gmail.com 
